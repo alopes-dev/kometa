@@ -18,7 +18,7 @@ export function Checkbox({ checked = false, onChange, disabled = false }: Checkb
       hitSlop={11}
     >
       <Box checked={checked} disabled={disabled}>
-        {checked ? <Icon name="checkmark" size={16} color="onBrand" /> : null}
+        {checked ? <Icon name="checkmark" sf="checkmark" size={16} color="onBrand" /> : null}
       </Box>
     </Pressable>
   );
