@@ -8,26 +8,19 @@ function renderWithTheme(ui: React.ReactElement) {
   return render(<ThemeProvider>{ui}</ThemeProvider>);
 }
 
+/*
+ * The catalogue item that carries modifier groups. Option labels are no
+ * longer inlined on the fixture: `describeSelections` resolves them through
+ * the product feature, so the ids here have to be ones that exist.
+ */
 const burger: MenuItem = {
-  id: 'r1-1',
-  restaurantId: 'r1',
+  id: 'r4-1',
+  restaurantId: 'r4',
   name: 'Cheeseburger Clássico',
   description: 'Hambúrguer de carne, queijo cheddar, alface e tomate.',
   price: 3000,
-  imageUrl: 'https://picsum.photos/seed/r1-1/200/200',
+  imageUrl: 'https://picsum.photos/seed/r4-1/200/200',
   category: 'Pratos Principais',
-  modifierGroups: [
-    {
-      id: 'pao',
-      label: 'Escolha o pão',
-      type: 'single',
-      required: true,
-      options: [
-        { id: 'pao-tradicional', label: 'Tradicional', priceDelta: 0 },
-        { id: 'pao-brioche', label: 'Brioche', priceDelta: 300 },
-      ],
-    },
-  ],
 };
 
 const plainEntry: CartItem = {

@@ -61,13 +61,8 @@ export type ProductAttribute = {
   tone?: 'default' | 'positive';
 };
 
-/**
- * `Omit` is scaffolding, not design: `MenuItem` still carries the retired
- * `ModifierGroup` shape, and intersecting the two would collide. The cutover
- * task removes the field from `MenuItem` and this becomes a plain
- * intersection.
- */
-export type Product = Omit<MenuItem, 'modifierGroups'> & {
+/** A menu item, plus everything its own screen needs to know about it. */
+export type Product = MenuItem & {
   availability: 'available' | 'unavailable';
   /** "Volte a consultar mais tarde" — the board promises no return time. */
   unavailableNote?: string;

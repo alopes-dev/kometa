@@ -28,43 +28,6 @@ export const Value = styled.Text`
 `;
 
 /**
- * `Quantidade` — node 48:20724 of the product board.
- *
- * A wider, flatter control than the pill above: it sits beside the add-to-cart
- * button and has to match its 54px height and 16px radius, which is why this
- * is a variant rather than a second component.
- */
-export const PanelContainer = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: ${({ theme }) => theme.product.metrics.stepperGap}px;
-  height: ${({ theme }) => theme.product.metrics.controlHeight}px;
-  padding-horizontal: ${({ theme }) => theme.product.metrics.stepperPaddingHorizontal}px;
-  border-radius: ${({ theme }) => theme.product.metrics.controlRadius}px;
-  border-curve: continuous;
-  background-color: ${({ theme }) => theme.colors.background.secondary};
-`;
-
-/**
- * `Menos` / `Mais` — nodes 48:20725, 48:20727. Glyphs rather than icons,
- * because that is what the board draws: a 22px minus and plus set in the text
- * face, the plus carrying the accent so the additive action is the one that
- * reads first.
- */
-export const PanelSign = styled.Text<{ accent?: boolean }>`
-  ${productTextStyle('stepperSign')}
-  color: ${({ theme, accent }) => (accent ? theme.colors.brand.base : theme.colors.text.primary)};
-`;
-
-/** `Valor` — node 48:20726. */
-export const PanelValue = styled.Text`
-  min-width: 12px;
-  text-align: center;
-  ${productTextStyle('stepperValue')}
-  color: ${({ theme }) => theme.colors.text.primary};
-`;
-
-/**
  * `Quantidade` — board 64:2470. The control that sits at the right of its
  * own row rather than beside the CTA: a bare minus, the value, and a filled
  * circle for plus.

@@ -64,8 +64,6 @@ const type = {
   /** The copy inside a notice banner. */
   notice: { fontFamily: fontFamily.text.regular, fontSize: 13, lineHeight: 19 },
 
-  /** @deprecated Board 48:20693. Retired with its components at the cutover. */
-  cartBar: { fontFamily: fontFamily.text.semibold, fontSize: 14 },
 } as const;
 
 /** Measured geometry, named for the board element that carries each value. */
@@ -120,23 +118,6 @@ const metrics = {
   ctaHeight: 54,
   ctaRadius: 16,
 
-  /*
-   * Below: tokens of the retired board (48:20693), kept only so the screen
-   * it drew keeps compiling until the cutover task deletes it and them
-   * together. Nothing new reads these.
-   */
-  /** @deprecated */ actionRowGap: 14,
-  /** @deprecated */ controlHeight: 54,
-  /** @deprecated */ controlRadius: 16,
-  /** @deprecated */ stepperPaddingHorizontal: 14,
-  /** @deprecated */ customizeGap: 12,
-  /** @deprecated */ optionBoxSize: 20,
-  /** @deprecated */ optionBoxRadius: 6,
-  /** @deprecated */ cartBarInset: 14,
-  /** @deprecated */ cartBarBottom: 18,
-  /** @deprecated */ cartBarHeight: 64,
-  /** @deprecated */ cartBarRadius: 16,
-  /** @deprecated */ cartBarPaddingHorizontal: 18,
 } as const;
 
 /**
@@ -153,9 +134,6 @@ const actionShadow = { offsetY: 3, radius: 12, opacity: 0.07, elevation: 3 } as 
  */
 const footerShadow = { offsetY: -4, radius: 16, opacity: 0.08, elevation: 12 } as const;
 
-/** @deprecated Board 48:20693's floating cart, retired at the cutover. */
-const cartBarShadow = { offsetY: 8, radius: 24, opacity: 0.12, elevation: 12 } as const;
-
 /**
  * Board 07, `Motion pretendido · 150–350 ms`. Annotations, not layers, so
  * they are specified here and applied by the components.
@@ -170,8 +148,6 @@ const motion = {
   /** With Reduce Motion, displacement becomes a crossfade no longer than this. */
   reducedCrossfade: 150,
   pressScale: 0.98,
-  /** @deprecated Board 48:20693, retired with its components at the cutover. */
-  pressDuration: 150,
 } as const;
 
 /** The gradient over the top of the hero photograph. */
@@ -184,7 +160,6 @@ export const product = {
   metrics,
   actionShadow,
   footerShadow,
-  cartBarShadow,
   motion,
   heroScrim,
 } as const;

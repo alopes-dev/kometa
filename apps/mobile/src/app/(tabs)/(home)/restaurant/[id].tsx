@@ -27,6 +27,7 @@ import {
   RestaurantHero,
 } from '@/features/home/components/RestaurantHero';
 import { getMenuItems, getRestaurantById } from '@/features/home/data';
+import { getProductById } from '@/features/product/data';
 import { buildMenuSections, POPULAR_SECTION_KEY } from '@/features/home/selectors';
 import type { ImageRef, MenuItem } from '@/features/home/types';
 
@@ -224,7 +225,7 @@ export default function RestaurantDetail() {
                   // with required choices cannot be added blind, so its
                   // button opens the sheet where those choices are made
                   // rather than dropping an unconfigured item in the cart.
-                  const hasModifiers = Boolean(item.modifierGroups?.length);
+                  const hasModifiers = Boolean(getProductById(item.id)?.modifierGroups?.length);
                   return (
                     <MenuItemRow
                       key={item.id}

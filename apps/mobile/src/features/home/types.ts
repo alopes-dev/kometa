@@ -44,20 +44,6 @@ export type Restaurant = {
   promotionLabel?: string;
 };
 
-export type ModifierOption = {
-  id: string;
-  label: string;
-  priceDelta: number;
-};
-
-export type ModifierGroup = {
-  id: string;
-  label: string;
-  type: 'single' | 'multiple';
-  required: boolean;
-  options: ModifierOption[];
-};
-
 export type MenuItem = {
   id: string;
   restaurantId: string;
@@ -72,7 +58,6 @@ export type MenuItem = {
    * are both derived from it, so there is one number to keep honest.
    */
   previousPrice?: number;
-  modifierGroups?: ModifierGroup[];
 };
 
 export type Offer = {

@@ -3,44 +3,10 @@ import type {
   ActiveOrder,
   HomeCategory,
   MenuItem,
-  ModifierGroup,
   Offer,
   Promotion,
   Restaurant,
 } from './types';
-
-const BURGER_MODIFIER_GROUPS: ModifierGroup[] = [
-  {
-    id: 'pao',
-    label: 'Escolha o pão',
-    type: 'single',
-    required: true,
-    options: [
-      { id: 'pao-tradicional', label: 'Tradicional', priceDelta: 0 },
-      { id: 'pao-brioche', label: 'Brioche', priceDelta: 300 },
-    ],
-  },
-  {
-    id: 'queijo',
-    label: 'Queijo',
-    type: 'single',
-    required: true,
-    options: [
-      { id: 'queijo-cheddar', label: 'Cheddar', priceDelta: 0 },
-      { id: 'queijo-gouda', label: 'Gouda', priceDelta: 500 },
-    ],
-  },
-  {
-    id: 'extras',
-    label: 'Extras',
-    type: 'multiple',
-    required: false,
-    options: [
-      { id: 'extra-bacon', label: 'Bacon', priceDelta: 700 },
-      { id: 'extra-ovo', label: 'Ovo', priceDelta: 500 },
-    ],
-  },
-];
 
 /**
  * The catalogue, written to the Home board's content (frame 48:19762).
@@ -370,7 +336,6 @@ export const mockMenuItems: MenuItem[] = [
     price: 3000,
     imageUrl: dishPhoto.classicBurger,
     category: 'Pratos Principais',
-    modifierGroups: BURGER_MODIFIER_GROUPS,
   },
   {
     id: 'r4-2',
@@ -381,7 +346,6 @@ export const mockMenuItems: MenuItem[] = [
     previousPrice: 4600,
     imageUrl: dishPhoto.doubleBurger,
     category: 'Pratos Principais',
-    modifierGroups: BURGER_MODIFIER_GROUPS,
   },
   {
     id: 'r4-3',
