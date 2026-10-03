@@ -90,7 +90,7 @@ describe('useCart', () => {
     expect(result.current.subtotal).toBe(2400);
   });
 
-  it('applies modifier price deltas to unitPrice and subtotal', () => {
+  it('stores the configured unit price the caller passed, on the line and in the subtotal', () => {
     const { result } = renderHook(() => useCart(), { wrapper });
     act(() =>
       result.current.addItem(burger, {
@@ -98,9 +98,11 @@ describe('useCart', () => {
           { groupId: 'pao', optionIds: ['pao-brioche'] },
           { groupId: 'extras', optionIds: ['extra-bacon', 'extra-ovo'] },
         ],
+        // 3000 base + 300 (brioche) + 700 (bacon) + 500 (ovo), computed by
+        // the product screen, which is what the customer saw on the button.
+        unitPrice: 4500,
       })
     );
-    // 3000 base + 300 (brioche) + 700 (bacon) + 500 (ovo) = 4500
     expect(result.current.items[0].unitPrice).toBe(4500);
     expect(result.current.subtotal).toBe(4500);
   });
@@ -190,3 +192,51 @@ describe('useCart', () => {
     consoleError.mockRestore();
   });
 });
+
+/**
+ * The product screen computes the unit price it is showing, and hands it
+ * over; the cart no longer derives one. Pricing a configuration needs the
+ * modifier model, which lives in `features/product`.
+ */
+describe('useCart with a caller-supplied unit price', () => {
+  it('prices a line at the item price when none is given', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => result.current.addItem(burger));
+    expect(result.current.subtotal).toBe(burger.price);
+  });
+
+  /*
+   * The number here deliberately matches nothing the cart could derive on
+   * its own: it is neither the item price nor the item price plus any
+   * selection. Only a cart that takes the caller's figure can produce it.
+   */
+  it('uses the unit price the caller computed, not one it derives', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() =>
+      result.current.addItem(burger, {
+        selections: [{ groupId: 'extras', optionIds: ['extra-bacon'] }],
+        unitPrice: 8888,
+      })
+    );
+    expect(result.current.subtotal).toBe(8888);
+  });
+
+  it('keeps two different configurations of one product as separate lines', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => {
+      result.current.addItem(burger, {
+        selections: [{ groupId: 'pao', optionIds: ['pao-tradicional'] }],
+        unitPrice: 3000,
+      });
+    });
+    act(() => {
+      result.current.addItem(burger, {
+        selections: [{ groupId: 'pao', optionIds: ['pao-brioche'] }],
+        unitPrice: 7777,
+      });
+    });
+    expect(result.current.items).toHaveLength(2);
+    expect(result.current.count).toBe(2);
+    expect(result.current.subtotal).toBe(10777);
+  });
+})

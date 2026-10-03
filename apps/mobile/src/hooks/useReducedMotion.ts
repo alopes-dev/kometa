@@ -8,7 +8,11 @@ export function useReducedMotion(): boolean {
     let mounted = true;
 
     AccessibilityInfo.isReduceMotionEnabled().then((value) => {
-      if (mounted) setReduced(value);
+      // Only when it differs from the default we already hold. Writing the
+      // same value back is a no-op re-render that lands after a synchronous
+      // test has finished asserting, which React reports as an update
+      // outside act() in whichever suite happens to render slowly enough.
+      if (mounted && value) setReduced(true);
     });
 
     const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);

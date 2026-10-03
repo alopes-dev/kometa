@@ -1,6 +1,5 @@
 import { createContext, useCallback, useMemo, useState, type ReactNode } from 'react';
 import type { MenuItem } from '@/features/home/types';
-import { computeUnitPrice } from '@/features/home/modifierPricing';
 
 export type CartSelection = {
   groupId: string;
@@ -19,6 +18,16 @@ export type CartItem = {
 export type AddItemOptions = {
   selections?: CartSelection[];
   notes?: string;
+  /**
+   * What one of these costs as configured. Defaults to `item.price`, which is
+   * right for a quick add from a menu row.
+   *
+   * The cart takes this figure rather than deriving it: pricing a
+   * configuration needs the modifier model, which belongs to
+   * `features/product`. Deriving it here a second time is how the number on
+   * the button and the number in the cart drift apart.
+   */
+  unitPrice?: number;
 };
 
 export type CartContextValue = {
@@ -58,7 +67,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const selections = options?.selections ?? [];
     const notes = options?.notes;
     const lineId = buildLineId(menuItem, selections, notes);
-    const unitPrice = computeUnitPrice(menuItem, selections);
+    const unitPrice = options?.unitPrice ?? menuItem.price;
 
     setCart((current) => {
       // Adding from a different restaurant than the one already in the cart starts a fresh cart.
