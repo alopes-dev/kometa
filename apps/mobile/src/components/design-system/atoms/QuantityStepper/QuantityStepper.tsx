@@ -2,6 +2,10 @@ import { Pressable } from 'react-native';
 import { Icon } from '../Icon';
 import {
   Container,
+  InlineButton,
+  InlineContainer,
+  InlineSign,
+  InlineValue,
   PanelContainer,
   PanelSign,
   PanelValue,
@@ -11,16 +15,24 @@ import {
 
 /**
  * `pill` is the compact control used inside a cart row. `panel` is the
- * product board's control — node 48:20724 — which sits beside the add-to-cart
- * button and shares its height and radius.
+ * retired product board's control — node 48:20724 — which sits beside the
+ * add-to-cart button and shares its height and radius. `inline` is the
+ * current board's: its own row, a bare minus and a filled plus.
  */
-export type QuantityStepperVariant = 'pill' | 'panel';
+export type QuantityStepperVariant = 'pill' | 'panel' | 'inline';
 
 export type QuantityStepperProps = {
   quantity: number;
   onIncrement: () => void;
   onDecrement: () => void;
   variant?: QuantityStepperVariant;
+  /**
+   * Default true. False dims the sign and swallows the press, so a cap is
+   * visible before it is discovered — board 07 asks that a limit never
+   * depend on the press failing silently.
+   */
+  canIncrement?: boolean;
+  canDecrement?: boolean;
 };
 
 export function QuantityStepper({
@@ -28,7 +40,46 @@ export function QuantityStepper({
   onIncrement,
   onDecrement,
   variant = 'pill',
+  canIncrement = true,
+  canDecrement = true,
 }: QuantityStepperProps) {
+  if (variant === 'inline') {
+    return (
+      <InlineContainer>
+        <Pressable
+          onPress={canDecrement ? onDecrement : undefined}
+          disabled={!canDecrement}
+          accessibilityRole="button"
+          accessibilityLabel="Diminuir quantidade"
+          accessibilityState={{ disabled: !canDecrement }}
+          hitSlop={8}
+        >
+          <InlineButton accent={false} disabled={!canDecrement}>
+            {/* U+2212, the typographic minus the board sets — not a hyphen. */}
+            <InlineSign onAccent={false} disabled={!canDecrement}>
+              −
+            </InlineSign>
+          </InlineButton>
+        </Pressable>
+        <InlineValue>{quantity}</InlineValue>
+        <Pressable
+          onPress={canIncrement ? onIncrement : undefined}
+          disabled={!canIncrement}
+          accessibilityRole="button"
+          accessibilityLabel="Aumentar quantidade"
+          accessibilityState={{ disabled: !canIncrement }}
+          hitSlop={8}
+        >
+          <InlineButton accent disabled={!canIncrement}>
+            <InlineSign onAccent disabled={!canIncrement}>
+              +
+            </InlineSign>
+          </InlineButton>
+        </Pressable>
+      </InlineContainer>
+    );
+  }
+
   if (variant === 'panel') {
     return (
       <PanelContainer>
