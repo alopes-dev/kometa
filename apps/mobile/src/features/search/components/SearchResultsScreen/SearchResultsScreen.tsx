@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '@/components/design-system/atoms';
 import { SearchBar } from '@/components/design-system/molecules';
 import { RestaurantCard } from '@/features/home/components/RestaurantCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
@@ -12,18 +11,26 @@ import { search } from '../../content';
 import { getSearchCatalogue } from '../../data';
 import { applyQuickFilters, applyScope, searchRestaurants } from '../../selectors';
 import type { SearchQuickFilter, SearchScope } from '../../types';
+import { SearchEmptyState } from '../SearchEmptyState';
 import { SearchFilterBar } from '../SearchFilterBar';
 import { SearchResultsHeader } from '../SearchResultsHeader';
 import { SearchScopeTabs } from '../SearchScopeTabs';
 import {
   CONTENT_GAP,
-  Empty,
+  EmptySlot,
   FIELD_HEIGHT,
   GUTTER,
   Gutter,
   Results,
   Screen,
 } from './SearchResultsScreen.styles';
+
+/**
+ * Node 62:1358 — Lucide's crossed utensils, which neither icon set carries.
+ * `fork.knife` is the nearest SF Symbol and `restaurant-outline` its Ionicon
+ * counterpart, the same pairing `mockSuggestedCategories` settled on.
+ */
+const NO_RESULTS_ICON = { name: 'restaurant-outline', sf: 'fork.knife' } as const;
 
 export type SearchResultsScreenProps = {
   /** The query that was run, already trimmed. */
@@ -50,10 +57,25 @@ export function SearchResultsScreen({ query, onBack, onEditQuery }: SearchResult
 
   const hasUnread = hasUnreadNotifications(mockNotifications);
 
+  /** What the query alone returns — what the filters are given to narrow. */
+  const matches = useMemo(() => searchRestaurants(getSearchCatalogue(), query), [query]);
+
   const results = useMemo(
-    () => applyQuickFilters(applyScope(searchRestaurants(getSearchCatalogue(), query), scope), filters),
-    [query, scope, filters]
+    () => applyQuickFilters(applyScope(matches, scope), filters),
+    [matches, scope, filters]
   );
+
+  /**
+   * Which dead end this is. A query that matched nothing and a filter that
+   * hid everything look the same on screen and are not the same problem: one
+   * is undone here, the other only by changing the words.
+   */
+  const hiddenByFilters = results.length === 0 && matches.length > 0;
+
+  const clearFilters = useCallback(() => {
+    setFilters(new Set());
+    setScope('all');
+  }, []);
 
   const toggleFavorite = useCallback((id: string) => {
     setFavoriteIds((current) => {
@@ -127,12 +149,20 @@ export function SearchResultsScreen({ query, onBack, onEditQuery }: SearchResult
                 />
               ))
             ) : (
-              <Empty>
-                <Text variant="h5">{search.emptyTitle}</Text>
-                <Text variant="caption" color="secondary" style={{ textAlign: 'center' }}>
-                  {search.emptyBody(query)}
-                </Text>
-              </Empty>
+              <EmptySlot>
+                <SearchEmptyState
+                  icon={NO_RESULTS_ICON}
+                  title={search.noResultsTitle}
+                  body={
+                    hiddenByFilters ? search.noResultsFiltered(matches.length) : search.noResultsBody
+                  }
+                  action={
+                    hiddenByFilters
+                      ? { label: search.clearFilters, onPress: clearFilters }
+                      : { label: search.editSearch, onPress: onEditQuery }
+                  }
+                />
+              </EmptySlot>
             )}
           </Results>
         </Gutter>

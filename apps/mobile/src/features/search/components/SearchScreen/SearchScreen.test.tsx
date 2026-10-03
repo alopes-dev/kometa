@@ -115,6 +115,29 @@ describe('SearchScreen', () => {
     expect(queryByText('Supermercado')).toBeNull();
   });
 
+  it('greets a screen with nothing remembered with the board’s opening', () => {
+    const { getByText, queryByText } = renderSearch();
+    expect(queryByText(search.startTitle)).toBeNull();
+
+    fireEvent.press(getByText(search.clearRecents));
+
+    expect(getByText(search.startTitle)).toBeTruthy();
+    expect(getByText(search.startBody)).toBeTruthy();
+    // The ways in the board's own empty phone does not draw, kept because
+    // this screen has them and they are what the opening is asking for.
+    expect(getByText(search.popular)).toBeTruthy();
+    expect(getByText(search.suggestedCategories)).toBeTruthy();
+  });
+
+  it('drops the opening once there is something typed for it to answer', () => {
+    const { getByText, getByLabelText, queryByText } = renderSearch();
+    fireEvent.press(getByText(search.clearRecents));
+    fireEvent.changeText(getByLabelText(search.placeholder), 'piz');
+    settleSuggestions();
+
+    expect(queryByText(search.startTitle)).toBeNull();
+  });
+
   it('remembers what was just searched, newest first and only once', () => {
     const { getByLabelText, getAllByLabelText, onSubmit } = renderSearch();
     const field = getByLabelText(search.placeholder);

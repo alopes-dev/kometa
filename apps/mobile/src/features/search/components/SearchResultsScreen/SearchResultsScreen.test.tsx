@@ -80,14 +80,38 @@ describe('SearchResultsScreen', () => {
 
     // O Pão & Brasa rates 4,6 — the board's own card; nothing here is below 4,5.
     expect(getByText(search.resultCount(3))).toBeTruthy();
-    expect(queryByText(search.emptyTitle)).toBeNull();
+    expect(queryByText(search.noResultsTitle)).toBeNull();
   });
 
   it('says so when a query returns nothing, instead of an empty count', () => {
     const { getByText } = renderResults('tratores');
-    expect(getByText(search.emptyTitle)).toBeTruthy();
-    expect(getByText(search.emptyBody('tratores'))).toBeTruthy();
+    expect(getByText(search.noResultsTitle)).toBeTruthy();
+    expect(getByText(search.noResultsBody)).toBeTruthy();
     expect(getByText(search.resultCount(0))).toBeTruthy();
+  });
+
+  it('hands a query that matched nothing back to the field, which is the only thing left to change', () => {
+    const { getByText, onEditQuery } = renderResults('tratores');
+    fireEvent.press(getByText(search.editSearch));
+    expect(onEditQuery).toHaveBeenCalled();
+  });
+
+  it('counts what the filters are hiding when they are what emptied the screen', () => {
+    const { getByText } = renderResults();
+    fireEvent.press(getByText(search.scopes.products));
+
+    expect(getByText(search.noResultsTitle)).toBeTruthy();
+    expect(getByText(search.noResultsFiltered(3))).toBeTruthy();
+  });
+
+  it('gives the filters back rather than the field, where the filters are what emptied it', () => {
+    const { getByText, onEditQuery } = renderResults();
+    fireEvent.press(getByText(search.scopes.products));
+    fireEvent.press(getByText(search.clearFilters));
+
+    expect(getByText(search.resultCount(3))).toBeTruthy();
+    expect(getByText('Burger House')).toBeTruthy();
+    expect(onEditQuery).not.toHaveBeenCalled();
   });
 
   it('leaves', () => {

@@ -9,6 +9,7 @@ import { spacing } from '@/theme';
 import { search } from '../../content';
 import { getPopularSearches, getRecentSearches, getSuggestedCategories } from '../../data';
 import { SEARCH_DEBOUNCE_MS, suggestTerms } from '../../selectors';
+import { SearchEmptyState } from '../SearchEmptyState';
 import { SearchTermRow } from '../SearchTermRow';
 import { SuggestedCategoryGrid } from '../SuggestedCategoryGrid';
 import {
@@ -18,11 +19,15 @@ import {
   FIELD_HEIGHT,
   GUTTER,
   HintCard,
+  Opening,
   Screen,
   Section,
   TopBar,
   WideSection,
 } from './SearchScreen.styles';
+
+/** Node 62:1340 — the same glyph the field carries, at the size of a state. */
+const OPENING_ICON = { name: 'search', sf: 'magnifyingglass' } as const;
 
 export type SearchScreenProps = {
   /** Runs a query — the return key, a remembered term, a suggested category. */
@@ -70,6 +75,18 @@ export function SearchScreen({ onSubmit, onBack, initialQuery = '' }: SearchScre
     () => suggestTerms(populars, debouncedQuery),
     [populars, debouncedQuery]
   );
+
+  /**
+   * "Busca vazia" (node 62:300) — nothing typed and nothing remembered, which
+   * is a first run or the moment after "Limpar".
+   *
+   * The board draws the block alone on the screen; here Populares and
+   * Categorias stay below it, because unlike the board this screen has them
+   * and they are the answer to the question the block asks. Hiding working
+   * ways in to match a drawing that never had them would cost the customer
+   * the only taps available.
+   */
+  const showOpening = query.trim() === '' && recents.length === 0;
 
   const runQuery = (term: string) => {
     const trimmed = term.trim();
@@ -123,6 +140,16 @@ export function SearchScreen({ onSubmit, onBack, initialQuery = '' }: SearchScre
           gap: CONTENT_GAP,
         }}
       >
+        {showOpening ? (
+          <Opening>
+            <SearchEmptyState
+              icon={OPENING_ICON}
+              title={search.startTitle}
+              body={search.startBody}
+            />
+          </Opening>
+        ) : null}
+
         {suggestedRecents.length > 0 ? (
           <Section>
             <SectionHeader

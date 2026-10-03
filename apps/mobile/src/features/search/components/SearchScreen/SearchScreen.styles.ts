@@ -57,3 +57,12 @@ export const HintCard = styled.View`
   background-color: ${({ theme }) => theme.colors.background.secondary};
   ${continuousCorners}
 `;
+
+/**
+ * The room the opening sits in — node 62:313, which pads the block 28 from
+ * the field. The scroll's own gap carries the space below it, so only the
+ * top is set here.
+ */
+export const Opening = styled.View`
+  padding-top: ${({ theme }) => theme.spacing[24]}px;
+`;

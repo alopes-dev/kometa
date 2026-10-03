@@ -52,12 +52,40 @@ export const search = {
   resultCount: (count: number) => `${count} ${count === 1 ? 'resultado' : 'resultados'}`,
 
   /**
-   * The board draws no empty state — every query it shows has results. A
-   * screen that can return none still needs to say so, in as little as it
-   * takes: two lines, no illustration.
+   * The empty states, frame 62:290 — "04 — Search Empty States", the board
+   * the results frame leaves out because every query it draws has results.
+   *
+   * Its body reads "Tente «tacos», altere a localização ou remova alguns
+   * filtros. Há 18 restaurantes abertos perto de Talatona." — three ways out
+   * and a count drawn against data this app does not hold: no opening hours,
+   * no locality for the customer, and no term to suggest. What carries over
+   * is the shape rather than the sentence: name what emptied the screen, and
+   * offer the one thing that undoes it.
+   *
+   * Written in the second person the rest of this file uses. The board writes
+   * "Tente" and "Pesquise"; two formal screens inside an app that says "Tens
+   * notificações por ler" would read as someone else's copy.
    */
-  emptyTitle: 'Sem resultados',
-  emptyBody: (query: string) => `Não encontrámos nada para "${query}". Tenta outro termo.`,
+
+  /** Node 62:338. */
+  noResultsTitle: 'Não encontrámos resultados',
+  /** Node 62:339, where the query itself is what found nothing. */
+  noResultsBody: 'Tenta outro termo ou procura por uma categoria.',
+  /**
+   * The same line where the query did match and the filters hid it — the
+   * board's "Há 18 restaurantes...", counted off what this screen would show
+   * with the filters lifted rather than off a number no data backs.
+   */
+  noResultsFiltered: (count: number) =>
+    `Sem filtros, esta pesquisa dá ${count} ${count === 1 ? 'resultado' : 'resultados'}.`,
+  /** Node 62:341. */
+  clearFilters: 'Limpar filtros',
+  /** The way out when no filter is hiding anything: change the words. */
+  editSearch: 'Editar pesquisa',
+
+  /** "Busca vazia" (nodes 62:317, 62:318) — the screen with nothing to offer yet. */
+  startTitle: 'O que vais encontrar hoje?',
+  startBody: 'Pesquisa por pratos, restaurantes, farmácias, produtos ou ofertas perto de ti.',
 
   /** Scope tabs, nodes 48:20178, 48:20180, 48:20182, 48:20184. */
   scopes: {

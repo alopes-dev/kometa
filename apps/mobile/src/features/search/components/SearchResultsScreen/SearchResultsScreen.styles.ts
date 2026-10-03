@@ -26,12 +26,14 @@ export const Results = styled.View`
 `;
 
 /**
- * The board draws no empty state, because every query it shows has results.
- * One that does not needs somewhere to say so — centred in the space the
- * cards would have filled, and nothing more than the two lines it takes.
+ * The room `SearchEmptyState` sits in, where the cards would have been.
+ *
+ * The board centres the block in the whole screen (node 62:335); here it is
+ * centred in what the feed leaves, because the chrome above it — the field,
+ * the tabs, the filters — is what the customer has to change to fill the
+ * screen again, and pushing that off the top to centre two lines would hide
+ * the way out.
  */
-export const Empty = styled.View`
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing[4]}px;
+export const EmptySlot = styled.View`
   padding-vertical: ${({ theme }) => theme.spacing[48]}px;
 `;
