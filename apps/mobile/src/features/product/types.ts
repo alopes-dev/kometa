@@ -99,5 +99,10 @@ export type Product = MenuItem & {
    * to "un.", which is what a dish is.
    */
   unitNoun?: string;
+  /**
+   * Board 06: "página longa quando a escolha pede contexto, bottom sheet
+   * quando a tarefa é curta". Defaults to the full screen.
+   */
+  presentation?: 'screen' | 'sheet';
   modifierGroups?: ModifierGroup[];
 };

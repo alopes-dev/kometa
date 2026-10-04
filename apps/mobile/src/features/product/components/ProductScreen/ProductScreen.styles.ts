@@ -24,3 +24,25 @@ export const NotFoundScreen = styled.View`
   justify-content: center;
   background-color: ${({ theme }) => theme.colors.background.primary};
 `;
+
+/**
+ * The sheet's own top row. The photograph is already behind the sheet, so
+ * there is no hero here — only the control board 07 insists on keeping,
+ * since a sheet that is dismissed by dragging alone strands anyone who
+ * cannot drag.
+ */
+export const SheetHeader = styled.View`
+  flex-direction: row;
+  justify-content: flex-end;
+  padding-horizontal: ${({ theme }) => theme.product.metrics.detailPaddingHorizontal}px;
+  padding-top: ${({ theme }) => theme.spacing[8]}px;
+`;
+
+export const SheetCloseButton = styled.View`
+  width: 32px;
+  height: 32px;
+  border-radius: ${({ theme }) => theme.radius.full}px;
+  align-items: center;
+  justify-content: center;
+  background-color: ${({ theme }) => theme.colors.background.secondary};
+`;

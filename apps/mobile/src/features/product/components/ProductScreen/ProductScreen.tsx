@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Share } from 'react-native';
+import { Pressable, Share } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, {
   scrollTo,
@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Text } from '@/components/design-system/atoms';
+import { Icon, Text } from '@/components/design-system/atoms';
 import type { CartSelection } from '@/hooks/CartProvider';
 import { useCart } from '@/hooks/useCart';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -26,7 +26,14 @@ import { ProductHeader } from '../ProductHeader';
 import { ProductHero, COLLAPSE_RANGE, HERO_MAX_HEIGHT } from '../ProductHero';
 import { ProductNoteField } from '../ProductNoteField';
 import { ProductQuantityRow } from '../ProductQuantityRow';
-import { Detail, Groups, NotFoundScreen, Screen } from './ProductScreen.styles';
+import {
+  Detail,
+  Groups,
+  NotFoundScreen,
+  Screen,
+  SheetCloseButton,
+  SheetHeader,
+} from './ProductScreen.styles';
 
 /**
  * How long the button holds "Adicionado ✓" before returning to its resting
@@ -44,6 +51,11 @@ export type ProductScreenProps = {
    * than adding a second line.
    */
   editingLineId?: string;
+  /**
+   * The sheet presentation — board 06's "bottom sheet quando a tarefa é
+   * curta". The photograph stays behind the sheet, so there is no hero.
+   */
+  compact?: boolean;
   /** Injected by tests so every failure the board draws can be exercised. */
   submit?: CartSubmitter;
 };
@@ -52,6 +64,7 @@ export type ProductScreenProps = {
 export function ProductScreen({
   productId,
   editingLineId,
+  compact = false,
   submit = submitToCart,
 }: ProductScreenProps) {
   const router = useRouter();
@@ -108,12 +121,14 @@ export function ProductScreen({
   });
 
   // The board draws no tab bar over the product, and the footer would
-  // otherwise stack on top of one.
+  // otherwise stack on top of one. A sheet leaves the screen behind it
+  // intact, so it has no business hiding that screen's furniture.
   useFocusEffect(
     useCallback(() => {
+      if (compact) return;
       setIsTabBarHidden(true);
       return () => setIsTabBarHidden(false);
-    }, [setIsTabBarHidden])
+    }, [setIsTabBarHidden, compact])
   );
 
   const toggleOption = useCallback(
@@ -266,9 +281,24 @@ export function ProductScreen({
         ref={scrollRef}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingTop: HERO_MAX_HEIGHT + insets.top }}
+        contentContainerStyle={{ paddingTop: compact ? 0 : HERO_MAX_HEIGHT + insets.top }}
         showsVerticalScrollIndicator={false}
       >
+        {compact ? (
+          <SheetHeader>
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel={content.close}
+              hitSlop={8}
+            >
+              <SheetCloseButton>
+                <Icon name="close" sf="xmark" size={16} color="primary" />
+              </SheetCloseButton>
+            </Pressable>
+          </SheetHeader>
+        ) : null}
+
         <Detail>
           <ProductHeader product={priced} selections={selections} />
 
@@ -308,21 +338,24 @@ export function ProductScreen({
         </Detail>
       </Animated.ScrollView>
 
-      <ProductHero
-        product={product}
-        topInset={insets.top}
-        scrollY={scrollY}
-        mode={groups.length > 0 ? 'customize' : 'detail'}
-        onBack={() => router.back()}
-        onClose={() => router.back()}
-        onShare={() => {
-          Share.share({ message: `${product.name} — ${content.addToCart(product.price)}` }).catch(
-            () => {}
-          );
-        }}
-        isFavorite={isFavorite}
-        onToggleFavorite={() => setIsFavorite((current) => !current)}
-      />
+      {/* No hero in a sheet: the photograph is already behind it. */}
+      {compact ? null : (
+        <ProductHero
+          product={priced}
+          topInset={insets.top}
+          scrollY={scrollY}
+          mode={groups.length > 0 ? 'customize' : 'detail'}
+          onBack={() => router.back()}
+          onClose={() => router.back()}
+          onShare={() => {
+            Share.share({
+              message: `${priced.name} — ${content.addToCart(priced.price)}`,
+            }).catch(() => {});
+          }}
+          isFavorite={isFavorite}
+          onToggleFavorite={() => setIsFavorite((current) => !current)}
+        />
+      )}
 
       <ProductFooter
         product={priced}
@@ -337,6 +370,7 @@ export function ProductScreen({
         onOpenCart={() => router.push('/cart')}
         submission={submission}
         preservedLabels={preservedLabels}
+        compact={compact}
       />
     </Screen>
   );

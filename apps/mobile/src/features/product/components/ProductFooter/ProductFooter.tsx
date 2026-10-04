@@ -63,6 +63,8 @@ export type ProductFooterProps = {
   cartTotal?: number;
   onOpenCart?: () => void;
   submission?: SubmissionState;
+  /** The sheet presentation, which has less width for the action's label. */
+  compact?: boolean;
   /** What the offline message names as surviving — the chosen option labels. */
   preservedLabels?: string[];
 };
@@ -81,7 +83,9 @@ export function ProductFooter({
   onOpenCart,
   submission = { kind: 'idle' },
   preservedLabels = [],
+  compact = false,
 }: ProductFooterProps) {
+  const addLabel = compact ? content.addShort : content.addToCart;
   const resolved = resolveCtaState(product, selections);
 
   /*
@@ -114,7 +118,7 @@ export function ProductFooter({
             ? content.ctaAdding
             : state === 'failed'
                 ? content.ctaRetry
-                : content.addToCart(total);
+                : addLabel(total);
 
   const announcement = state === 'ready' ? content.addToCartAnnouncement(total) : label;
 

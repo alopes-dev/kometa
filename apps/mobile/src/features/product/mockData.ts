@@ -133,6 +133,8 @@ export const productEnrichment: Record<string, ProductEnrichment> = {
 
   /** Board 03 — the simple product: one decision, an attribute row, a cap. */
   'r4-4': {
+    // One decision and a quantity — the short task the board gives a sheet.
+    presentation: 'sheet',
     attributeLayout: 'inline',
     maxQuantity: 6,
     attributes: [

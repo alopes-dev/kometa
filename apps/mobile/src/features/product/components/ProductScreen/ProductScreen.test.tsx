@@ -368,3 +368,85 @@ describe('ProductScreen editing a configuration that is already in the cart', ()
     );
   });
 });
+
+describe('ProductScreen in its compact presentation', () => {
+  it('drops the hero, because the sheet sits over the photograph already', () => {
+    const { queryAllByText } = renderScreen('r4-4');
+    const full = queryAllByText('Milkshake de Chocolate').length;
+
+    const compact = render(
+      <SafeAreaProvider
+        initialMetrics={{
+          frame: { x: 0, y: 0, width: 390, height: 844 },
+          insets: { top: 47, left: 0, right: 0, bottom: 34 },
+        }}
+      >
+        <ThemeProvider>
+          <TabBarVisibilityProvider>
+            <CartProvider>
+              <ProductScreen
+                productId="r4-4"
+                compact
+                submit={createCartSubmitter({ latencyMs: 0 })}
+              />
+            </CartProvider>
+          </TabBarVisibilityProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+
+    // Twice full-screen (header + collapsed hero title), once compact.
+    expect(full).toBe(2);
+    expect(compact.queryAllByText('Milkshake de Chocolate')).toHaveLength(1);
+  });
+
+  it('shortens the action, which has less room to live in', () => {
+    const { getByText } = render(
+      <SafeAreaProvider
+        initialMetrics={{
+          frame: { x: 0, y: 0, width: 390, height: 844 },
+          insets: { top: 47, left: 0, right: 0, bottom: 34 },
+        }}
+      >
+        <ThemeProvider>
+          <TabBarVisibilityProvider>
+            <CartProvider>
+              <ProductScreen
+                productId="r4-4"
+                compact
+                submit={createCartSubmitter({ latencyMs: 0 })}
+              />
+            </CartProvider>
+          </TabBarVisibilityProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    expect(getByText('Adicionar · 1.800 Kz')).toBeTruthy();
+  });
+
+  // Board 07: "botão fechar permanece disponível" — a sheet that can only be
+  // dismissed by dragging strands anyone who cannot drag.
+  it('keeps a close control, which dragging alone would not provide', () => {
+    const { getByLabelText } = render(
+      <SafeAreaProvider
+        initialMetrics={{
+          frame: { x: 0, y: 0, width: 390, height: 844 },
+          insets: { top: 47, left: 0, right: 0, bottom: 34 },
+        }}
+      >
+        <ThemeProvider>
+          <TabBarVisibilityProvider>
+            <CartProvider>
+              <ProductScreen
+                productId="r4-4"
+                compact
+                submit={createCartSubmitter({ latencyMs: 0 })}
+              />
+            </CartProvider>
+          </TabBarVisibilityProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    expect(getByLabelText('Fechar')).toBeTruthy();
+  });
+});

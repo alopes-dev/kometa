@@ -23,6 +23,21 @@ export default function HomeLayout() {
         */}
         <Stack.Screen name="restaurant/[id]" options={{ animation: "fade" }} />
         <Stack.Screen name="product/[itemId]" />
+        {/*
+          The compact presentation. `fitToContents` lets a short product sit
+          at its own height instead of a guessed fraction, and the grabber
+          plus the sheet's own close button give two ways out — board 07 asks
+          that dragging never be the only one.
+        */}
+        <Stack.Screen
+          name="product/sheet/[itemId]"
+          options={{
+            presentation: "formSheet",
+            sheetAllowedDetents: "fitToContents",
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 20,
+          }}
+        />
         <Stack.Screen name="cart" />
 
         {/*

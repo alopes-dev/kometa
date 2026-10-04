@@ -147,8 +147,18 @@ export default function RestaurantDetail() {
     }).catch(() => {});
   };
 
+  /**
+   * Which presentation a product gets is the menu's call, not the product
+   * screen's: a route's presentation is fixed when it is pushed. Board 06
+   * gives the long page to products whose choices need context and the sheet
+   * to the short tasks.
+   */
   const openProduct = (itemId: string) => {
-    router.push({ pathname: '/product/[itemId]', params: { itemId } });
+    const compact = getProductById(itemId)?.presentation === 'sheet';
+    router.push({
+      pathname: compact ? '/product/sheet/[itemId]' : '/product/[itemId]',
+      params: { itemId },
+    });
   };
 
   const removeFlight = (flightId: number) => {

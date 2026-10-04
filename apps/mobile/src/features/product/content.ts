@@ -88,6 +88,11 @@ export const content = {
     return `Adicionar ao carrinho · ${formatKwanza(total)}`;
   },
 
+  /** The sheet's label — board 06. Less room, so fewer words for one action. */
+  addShort(total: number): string {
+    return `Adicionar · ${formatKwanza(total)}`;
+  },
+
   /** The CTA announces its total, not just its verb. */
   addToCartAnnouncement(total: number): string {
     return `Adicionar ao carrinho, total ${formatKwanza(total)}`;
