@@ -181,3 +181,16 @@ describe('resolveHeadlinePrice on a malformed absolute group', () => {
     expect(computeUnitPrice(emptyVariation, [])).toBe(4000);
   });
 });
+
+describe('formatBreakdown with a product counted in something other than units', () => {
+  const box = { ...milkshake, unitNoun: 'caixa' };
+
+  // Board 06's health frame counts boxes: "1 caixa × 1.200 Kz".
+  it('counts the product in its own noun', () => {
+    expect(formatBreakdown(box, [], 1)).toBe('1 caixa × 1.800 Kz');
+  });
+
+  it('falls back to units when the product names none', () => {
+    expect(formatBreakdown(milkshake, [], 1)).toBe('1 un. × 1.800 Kz');
+  });
+});

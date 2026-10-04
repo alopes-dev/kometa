@@ -118,16 +118,19 @@ export function formatBreakdown(
   quantity: number
 ): string {
   const group = absoluteGroup(product);
+  // "1 un." for a dish, "1 caixa" for a box of tablets — the footer counts
+  // the thing the customer is actually buying.
+  const unit = product.unitNoun ?? 'un.';
 
   // The flat discount line only stands in for a composition when there is
   // none. With a variation or extras in play, the sum has to be spelled out
   // or the footer stops explaining the total it shows.
   if (isOffer(product) && !group && sumDeltas(product, selections) === 0) {
-    return `${quantity} un. · preço com desconto`;
+    return `${quantity} ${unit} · preço com desconto`;
   }
 
   if (groupsOf(product).length === 0) {
-    return `${quantity} un. × ${formatKwanza(product.price)}`;
+    return `${quantity} ${unit} × ${formatKwanza(product.price)}`;
   }
 
   const chosen = group ? chosenOption(group, selections) : undefined;

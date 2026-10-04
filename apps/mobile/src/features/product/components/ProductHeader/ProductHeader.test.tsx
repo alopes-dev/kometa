@@ -89,3 +89,39 @@ describe('ProductHeader', () => {
     expect(getByText('3.000 Kz').props.numberOfLines).toBeUndefined();
   });
 });
+
+describe('ProductHeader in the labelled-table layout', () => {
+  const pharmacy = {
+    ...milkshake,
+    attributeLayout: 'table' as const,
+    attributes: [
+      { id: 'marca', label: 'Marca', value: 'Genérico' },
+      { id: 'disponibilidade', label: 'Disponibilidade', value: 'Em stock', tone: 'positive' as const },
+    ],
+    notice: 'Este produto pode exigir receita médica.',
+  };
+
+  it('names each attribute instead of showing bare values', () => {
+    const { getByText } = renderHeader(<ProductHeader product={pharmacy} selections={[]} />);
+    expect(getByText('Marca')).toBeTruthy();
+    expect(getByText('Genérico')).toBeTruthy();
+  });
+
+  // Board 06: "o texto é factual e neutro. A experiência não inventa
+  // obrigação, aconselhamento ou promessa clínica."
+  it('states the caution exactly, without advice around it', () => {
+    const { getByText } = renderHeader(<ProductHeader product={pharmacy} selections={[]} />);
+    expect(getByText('Este produto pode exigir receita médica.')).toBeTruthy();
+  });
+
+  it('shows no caution on a product that carries none', () => {
+    const { queryByText } = renderHeader(<ProductHeader product={milkshake} selections={[]} />);
+    expect(queryByText(/receita médica/)).toBeNull();
+  });
+
+  it('keeps the inline row for products that do not ask for the table', () => {
+    const { getByText, queryByText } = renderHeader(<ProductHeader product={milkshake} selections={[]} />);
+    expect(getByText('Chocolate')).toBeTruthy();
+    expect(queryByText('Sabor')).toBeNull();
+  });
+});

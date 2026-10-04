@@ -5,6 +5,7 @@ import { formatKwanza } from '../../../home/format';
 import { content } from '../../content';
 import { resolveHeadlinePrice } from '../../pricing';
 import type { Product } from '../../types';
+import { ProductAttributeTable } from '../ProductAttributeTable';
 import { ProductNotice } from '../ProductNotice';
 import {
   Attribute,
@@ -71,7 +72,16 @@ export function ProductHeader({ product, selections }: ProductHeaderProps) {
 
       <Description>{product.description}</Description>
 
-      {product.attributes?.length ? (
+      {/*
+        Two layouts, one field. The chip row carries values a customer reads
+        at a glance; the table names them, which a pharmacy fact needs —
+        "Genérico" on its own says nothing.
+      */}
+      {product.attributes?.length && product.attributeLayout === 'table' ? (
+        <ProductAttributeTable attributes={product.attributes} />
+      ) : null}
+
+      {product.attributes?.length && product.attributeLayout !== 'table' ? (
         <Attributes>
           {product.attributes.map((attribute) => (
             <Attribute key={attribute.id}>
@@ -89,6 +99,19 @@ export function ProductHeader({ product, selections }: ProductHeaderProps) {
             </Attribute>
           ))}
         </Attributes>
+      ) : null}
+
+      {product.notice ? (
+        <Notices>
+          {/*
+            Stated exactly as given, with no sentence built around it: board
+            06 is explicit that the experience invents no obligation, advice
+            or clinical promise.
+          */}
+          <ProductNotice icon={{ name: 'information-circle-outline', sf: 'info.circle' }}>
+            {product.notice}
+          </ProductNotice>
+        </Notices>
       ) : null}
 
       {unavailable || headline.kind === 'offer' ? (

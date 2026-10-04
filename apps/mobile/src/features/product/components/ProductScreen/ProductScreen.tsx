@@ -19,6 +19,7 @@ import { getProductById } from '../../data';
 import { computeTotal, computeUnitPrice } from '../../pricing';
 import { findFirstIncompleteGroup, isRadioGroup, isOptionSelectable } from '../../validation';
 import { ModifierGroupCard } from '../ModifierGroupCard';
+import { ProductDisclosures } from '../ProductDisclosures';
 import { ProductFooter } from '../ProductFooter';
 import { ProductHeader } from '../ProductHeader';
 import { ProductHero, COLLAPSE_RANGE, HERO_MAX_HEIGHT } from '../ProductHero';
@@ -195,6 +196,14 @@ export function ProductScreen({ productId }: ProductScreenProps) {
             onIncrement={() => setQuantity((current) => current + 1)}
             onDecrement={() => setQuantity((current) => Math.max(1, current - 1))}
           />
+
+          {/*
+            Last, and deliberately so: reference belongs after the decision,
+            where it informs without competing with it.
+          */}
+          {product.disclosures?.length ? (
+            <ProductDisclosures disclosures={product.disclosures} />
+          ) : null}
         </Detail>
       </Animated.ScrollView>
 

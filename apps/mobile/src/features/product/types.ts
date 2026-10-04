@@ -61,6 +61,21 @@ export type ProductAttribute = {
   tone?: 'default' | 'positive';
 };
 
+/**
+ * `Ingredientes`, `Alergénios`, `Composição` — board 06.
+ *
+ * Progressive disclosure: these sit below the choices and open in place, so
+ * the detail is reachable without competing with the decision the customer
+ * came to make.
+ */
+export type ProductDisclosure = {
+  id: string;
+  label: string;
+  /** What the row shows while closed — "7 itens", "Glúten · leite". */
+  summary?: string;
+  body: string;
+};
+
 /** A menu item, plus everything its own screen needs to know about it. */
 export type Product = MenuItem & {
   availability: 'available' | 'unavailable';
@@ -72,5 +87,17 @@ export type Product = MenuItem & {
   attributeLayout?: 'inline' | 'table';
   /** "−17% hoje". `previousPrice` is inherited from `MenuItem`. */
   offerLabel?: string;
+  disclosures?: ProductDisclosure[];
+  /**
+   * A neutral, factual caution — "Este produto pode exigir receita médica."
+   * Board 06 is explicit that this states a fact and never infers a
+   * condition or offers advice.
+   */
+  notice?: string;
+  /**
+   * How one of these is counted in the footer: "1 un.", "1 caixa". Defaults
+   * to "un.", which is what a dish is.
+   */
+  unitNoun?: string;
   modifierGroups?: ModifierGroup[];
 };

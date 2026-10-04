@@ -75,6 +75,34 @@ const PIZZA_EXTRAS: ModifierGroup = {
   ],
 };
 
+/** Board 06 — the pizza's reference sections, in the order it lists them. */
+const PIZZA_DISCLOSURES = [
+  {
+    id: 'ingredientes',
+    label: 'Ingredientes',
+    summary: '7 itens',
+    body: 'Massa, molho de tomate, mozzarella, manjericão fresco, azeite, sal e orégãos.',
+  },
+  {
+    id: 'alergenios',
+    label: 'Alergénios',
+    summary: 'Glúten · leite',
+    body: 'Contém glúten e leite. Preparada numa cozinha que também manuseia ovos e frutos secos.',
+  },
+  {
+    id: 'peso',
+    label: 'Peso aproximado',
+    summary: '650 g',
+    body: 'Cerca de 650 g na variação Média e 900 g na Grande. O peso varia com os extras.',
+  },
+  {
+    id: 'nutricional',
+    label: 'Informação nutricional',
+    summary: 'Por 100 g',
+    body: 'Por 100 g: 254 kcal, 9,8 g de gordura, 31 g de hidratos de carbono, 11 g de proteína, 1,2 g de sal.',
+  },
+];
+
 export const productEnrichment: Record<string, ProductEnrichment> = {
   /** Board 04 — the customizable product the whole flow is drawn against. */
   'r4-1': {
@@ -91,6 +119,16 @@ export const productEnrichment: Record<string, ProductEnrichment> = {
   'r4-3': {
     availability: 'unavailable',
     unavailableNote: 'Volte a consultar mais tarde',
+    // The board keeps this section on the unavailable product: the detail
+    // is what preserves the context its price and description establish.
+    disclosures: [
+      {
+        id: 'ingredientes-alergenios',
+        label: 'Ingredientes e alergénios',
+        summary: 'Contém glúten e leite',
+        body: 'Batata, óleo vegetal e sal. Frita em óleo partilhado com panados que contêm glúten e leite.',
+      },
+    ],
   },
 
   /** Board 03 — the simple product: one decision, an attribute row, a cap. */
@@ -113,5 +151,6 @@ export const productEnrichment: Record<string, ProductEnrichment> = {
   /** Board 06 — the long page, and the only absolute-priced variation. */
   'r3-1': {
     modifierGroups: [PIZZA_SIZE, PIZZA_EXTRAS],
+    disclosures: PIZZA_DISCLOSURES,
   },
 };

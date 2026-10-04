@@ -170,3 +170,37 @@ describe('ProductScreen', () => {
     expect(getByText('2 itens · 3.600 Kz · Ver carrinho')).toBeTruthy();
   });
 });
+
+describe('ProductScreen reference sections', () => {
+  it('lists the reference sections below the choices', () => {
+    const { getByText } = renderScreen('r3-1');
+    expect(getByText('Ingredientes')).toBeTruthy();
+    expect(getByText('Alergénios')).toBeTruthy();
+    expect(getByText('Peso aproximado')).toBeTruthy();
+    expect(getByText('Informação nutricional')).toBeTruthy();
+  });
+
+  it('carries each section summary on its closed row', () => {
+    const { getByText } = renderScreen('r3-1');
+    expect(getByText('Glúten · leite')).toBeTruthy();
+    expect(getByText('650 g')).toBeTruthy();
+  });
+
+  it('opens a section in place when its row is pressed', () => {
+    const { getByText, queryByText } = renderScreen('r3-1');
+    expect(queryByText(/Massa, molho de tomate/)).toBeNull();
+    fireEvent.press(getByText('Ingredientes'));
+    expect(getByText(/Massa, molho de tomate/)).toBeTruthy();
+  });
+
+  it('keeps the unavailable product explained by its own section', () => {
+    const { getByText } = renderScreen('r4-3');
+    expect(getByText('Ingredientes e alergénios')).toBeTruthy();
+    expect(getByText('Contém glúten e leite')).toBeTruthy();
+  });
+
+  it('shows no section list for a product that carries none', () => {
+    const { queryByText } = renderScreen('r4-4');
+    expect(queryByText('Ingredientes')).toBeNull();
+  });
+});
