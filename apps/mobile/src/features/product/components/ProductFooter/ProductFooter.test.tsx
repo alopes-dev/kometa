@@ -97,3 +97,64 @@ describe('ProductFooter', () => {
     expect(getByText('Adicionar ao carrinho · 5.400 Kz')).toBeTruthy();
   });
 });
+
+describe('ProductFooter while a submission is in flight or has failed', () => {
+  it('says it is working and refuses a second press', () => {
+    const onAdd = jest.fn();
+    const { getByText } = renderFooter(footer({ submission: { kind: 'adding' }, onAdd }));
+    fireEvent.press(getByText('A adicionar…'));
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  it('names the failure beside the total and offers a retry', () => {
+    const onAdd = jest.fn();
+    const { getByText } = renderFooter(
+      footer({ submission: { kind: 'failed', reason: 'failed' }, onAdd })
+    );
+    expect(getByText('Não foi possível adicionar ao carrinho.')).toBeTruthy();
+    expect(getByText('Nada foi duplicado. Tente adicionar novamente.')).toBeTruthy();
+    fireEvent.press(getByText('Tentar novamente'));
+    expect(onAdd).toHaveBeenCalledTimes(1);
+  });
+
+  it('distinguishes a total that could not be worked out', () => {
+    const { getByText } = renderFooter(
+      footer({ submission: { kind: 'failed', reason: 'pricing' } })
+    );
+    expect(getByText('Não foi possível calcular o total.')).toBeTruthy();
+    expect(getByText('As escolhas continuam aqui. Tente novamente.')).toBeTruthy();
+  });
+
+  it('pauses rather than fails when there is no connection, and says what survived', () => {
+    const onAdd = jest.fn();
+    const { getByText } = renderFooter(
+      footer({
+        submission: { kind: 'failed', reason: 'offline' },
+        preservedLabels: ['Bacon', 'Extra queijo', 'Sesame'],
+        onAdd,
+      })
+    );
+    expect(getByText('Sem conexão')).toBeTruthy();
+    expect(getByText('Bacon, Extra queijo e Sesame estão preservados.')).toBeTruthy();
+    // The board pauses the action rather than renaming it; the banner is
+    // what explains the pause.
+    fireEvent.press(getByText('Adicionar ao carrinho · 4.200 Kz'));
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  it('reports a price that moved and asks for a fresh confirmation', () => {
+    const onAdd = jest.fn();
+    const { getByText } = renderFooter(
+      footer({ submission: { kind: 'failed', reason: 'priceChanged', newPrice: 4800, previousPrice: 3000 } })
+    );
+    expect(getByText('Produto actualizado')).toBeTruthy();
+    expect(getByText('Preço base alterado de 3.000 Kz para 4.800 Kz.')).toBeTruthy();
+    expect(getByText('Tentar novamente')).toBeTruthy();
+  });
+
+  it('shows no banner when nothing has gone wrong', () => {
+    const { queryByText } = renderFooter(footer());
+    expect(queryByText(/Não foi possível/)).toBeNull();
+    expect(queryByText('Sem conexão')).toBeNull();
+  });
+});

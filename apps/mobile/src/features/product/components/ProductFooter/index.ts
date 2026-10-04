@@ -1,1 +1,7 @@
-export { ProductFooter, resolveCtaState, type ProductFooterProps, type CtaState } from './ProductFooter';
+export {
+  ProductFooter,
+  resolveCtaState,
+  type ProductFooterProps,
+  type CtaState,
+  type SubmissionState,
+} from './ProductFooter';

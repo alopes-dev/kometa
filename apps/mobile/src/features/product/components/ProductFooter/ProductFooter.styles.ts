@@ -87,3 +87,44 @@ export const CartBarLabel = styled.Text`
   flex: 1;
   color: ${({ theme }) => theme.colors.text.brand};
 `;
+
+/**
+ * Board 02: "Erro de cálculo e add-to-cart aparecem perto do total e
+ * preservam todas as escolhas." The message sits with the number it is
+ * about, not at the top of a page the customer has scrolled away from.
+ */
+export const Banner = styled.View<{ tone: 'error' | 'neutral' | 'positive' }>`
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: ${({ theme }) => theme.radius.md}px;
+  ${continuousCorners}
+  margin-bottom: ${({ theme }) => theme.product.metrics.footerRowGap}px;
+  background-color: ${({ theme, tone }) =>
+    tone === 'error'
+      ? theme.colors.status.error.bg
+      : tone === 'positive'
+        ? theme.colors.status.success.bg
+        : theme.colors.background.secondary};
+`;
+
+export const BannerText = styled.View`
+  flex: 1;
+  gap: 2px;
+`;
+
+export const BannerTitle = styled.Text<{ tone: 'error' | 'neutral' | 'positive' }>`
+  ${productTextStyle('groupError')}
+  color: ${({ theme, tone }) =>
+    tone === 'error'
+      ? theme.colors.status.error.fg
+      : tone === 'positive'
+        ? theme.colors.status.success.fg
+        : theme.colors.text.primary};
+`;
+
+export const BannerBody = styled.Text`
+  ${productTextStyle('optionNote')}
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;

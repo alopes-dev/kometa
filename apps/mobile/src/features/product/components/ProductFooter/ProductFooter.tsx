@@ -7,6 +7,10 @@ import { computeTotal, computeUnitPrice, formatBreakdown } from '../../pricing';
 import type { Product } from '../../types';
 import { canAdd } from '../../validation';
 import {
+  Banner,
+  BannerBody,
+  BannerText,
+  BannerTitle,
   Bar,
   Breakdown,
   CartBar,
@@ -17,12 +21,25 @@ import {
   Total,
 } from './ProductFooter.styles';
 
-/**
- * The CTA states that need no network. 'adding' and 'failed' arrive with the
- * asynchronous add, which is the next spec; 'added' does not wait for it,
- * because confirming a local state change is itself local.
- */
-export type CtaState = 'ready' | 'needsChoices' | 'unavailable' | 'added';
+export type CtaState =
+  | 'ready'
+  | 'needsChoices'
+  | 'unavailable'
+  | 'added'
+  | 'adding'
+  | 'failed'
+  | 'paused';
+
+/** Where a submission has got to, as far as the footer needs to know. */
+export type SubmissionState =
+  | { kind: 'idle' }
+  | { kind: 'adding' }
+  | {
+      kind: 'failed';
+      reason: 'failed' | 'offline' | 'pricing' | 'priceChanged';
+      newPrice?: number;
+      previousPrice?: number;
+    };
 
 export function resolveCtaState(product: Product, selections: CartSelection[]): CtaState {
   // Availability first: an unavailable product is not merely unconfigured,
@@ -45,6 +62,9 @@ export type ProductFooterProps = {
   cartCount?: number;
   cartTotal?: number;
   onOpenCart?: () => void;
+  submission?: SubmissionState;
+  /** What the offline message names as surviving — the chosen option labels. */
+  preservedLabels?: string[];
 };
 
 /** `Rodapé` — the sum and the one action, pinned above the safe area. */
@@ -59,11 +79,28 @@ export function ProductFooter({
   cartCount = 0,
   cartTotal = 0,
   onOpenCart,
+  submission = { kind: 'idle' },
+  preservedLabels = [],
 }: ProductFooterProps) {
   const resolved = resolveCtaState(product, selections);
-  // The confirmation outranks 'ready' while it lasts, but never 'unavailable'
-  // or 'needsChoices' — those describe the product, not the last press.
-  const state: CtaState = justAdded && resolved === 'ready' ? 'added' : resolved;
+
+  /*
+   * What the submission is doing outranks what the product allows, but only
+   * while it is doing something. A product that is unavailable or
+   * unconfigured never reaches a submission in the first place.
+   */
+  const state: CtaState =
+    resolved !== 'ready'
+      ? resolved
+      : submission.kind === 'adding'
+        ? 'adding'
+        : submission.kind === 'failed'
+          ? submission.reason === 'offline'
+            ? 'paused'
+            : 'failed'
+          : justAdded
+            ? 'added'
+            : 'ready';
   const total = computeTotal(computeUnitPrice(product, selections), quantity);
 
   const label =
@@ -73,7 +110,11 @@ export function ProductFooter({
         ? content.ctaNeedsChoices
         : state === 'added'
           ? content.ctaAdded
-          : content.addToCart(total);
+          : state === 'adding'
+            ? content.ctaAdding
+            : state === 'failed'
+                ? content.ctaRetry
+                : content.addToCart(total);
 
   const announcement = state === 'ready' ? content.addToCartAnnouncement(total) : label;
 
@@ -82,10 +123,68 @@ export function ProductFooter({
   // inert — there is nothing to take them to. 'added' is held briefly so a
   // second press cannot double-add during the confirmation.
   const handlePress =
-    state === 'ready' ? onAdd : state === 'needsChoices' ? onNeedsChoices : undefined;
+    state === 'ready' || state === 'failed'
+      ? onAdd
+      : state === 'needsChoices'
+        ? onNeedsChoices
+        : undefined;
+
+  // The press is refused outright while a submission is in flight, which is
+  // the other half of the idempotency guarantee: the key cannot be reused
+  // before its own answer arrives.
+  const inert = state === 'unavailable' || state === 'adding' || state === 'paused';
+
+  const banner = (() => {
+    if (submission.kind !== 'failed') return null;
+    switch (submission.reason) {
+      case 'offline':
+        return {
+          tone: 'neutral' as const,
+          icon: { name: 'cloud-offline-outline' as const, sf: 'wifi.slash' as const },
+          title: content.offlineTitle,
+          body: content.offlineBody(preservedLabels),
+        };
+      case 'pricing':
+        return {
+          tone: 'error' as const,
+          icon: { name: 'alert-circle-outline' as const, sf: 'exclamationmark.circle' as const },
+          title: content.errorPricingTitle,
+          body: content.errorPricingBody,
+        };
+      case 'priceChanged':
+        return {
+          tone: 'positive' as const,
+          icon: { name: 'refresh-outline' as const, sf: 'arrow.triangle.2.circlepath' as const },
+          title: content.priceChangedTitle,
+          body: content.priceChangedBody(submission.previousPrice ?? 0, submission.newPrice ?? 0),
+        };
+      default:
+        return {
+          tone: 'error' as const,
+          icon: { name: 'alert-circle-outline' as const, sf: 'exclamationmark.circle' as const },
+          title: content.errorAddTitle,
+          body: content.errorAddBody,
+        };
+    }
+  })();
 
   return (
     <Bar bottomInset={bottomInset}>
+      {banner ? (
+        <Banner tone={banner.tone} accessible accessibilityRole="alert">
+          <Icon
+            name={banner.icon.name}
+            sf={banner.icon.sf}
+            size={16}
+            color={banner.tone === 'error' ? 'error' : banner.tone === 'positive' ? 'success' : 'muted'}
+          />
+          <BannerText>
+            <BannerTitle tone={banner.tone}>{banner.title}</BannerTitle>
+            <BannerBody>{banner.body}</BannerBody>
+          </BannerText>
+        </Banner>
+      ) : null}
+
       {cartCount > 0 && onOpenCart ? (
         <Pressable
           onPress={onOpenCart}
@@ -106,14 +205,16 @@ export function ProductFooter({
       </SummaryRow>
 
       <Pressable
-        onPress={handlePress}
-        disabled={state === 'unavailable'}
+        onPress={inert ? undefined : handlePress}
+        disabled={inert}
         accessibilityRole="button"
         accessibilityLabel={announcement}
-        accessibilityState={{ disabled: state === 'unavailable' }}
+        accessibilityState={{ disabled: inert, busy: state === 'adding' }}
       >
-        <Cta enabled={state === 'ready' || state === 'added'}>
-          <CtaLabel enabled={state === 'ready' || state === 'added'}>{label}</CtaLabel>
+        <Cta enabled={state === 'ready' || state === 'added' || state === 'failed'}>
+          <CtaLabel enabled={state === 'ready' || state === 'added' || state === 'failed'}>
+            {label}
+          </CtaLabel>
         </Cta>
       </Pressable>
     </Bar>

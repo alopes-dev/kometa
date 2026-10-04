@@ -1,9 +1,10 @@
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/components/design-system/ThemeProvider';
 import { CartProvider } from '@/hooks/CartProvider';
 import { TabBarVisibilityProvider } from '@/hooks/TabBarVisibilityProvider';
 import { ProductScreen } from './ProductScreen';
+import { createCartSubmitter, type CartSubmitter } from '../../cartSubmission';
 
 // Navigation is the navigator's job; the screen only calls back() and
 // push(). Mocked here the way the flow suites already mock it.
@@ -22,7 +23,7 @@ jest.mock('expo-router', () => {
   };
 });
 
-function renderScreen(productId: string) {
+function renderScreen(productId: string, submit: CartSubmitter = createCartSubmitter({ latencyMs: 0 })) {
   return render(
     <SafeAreaProvider
       initialMetrics={{
@@ -33,7 +34,7 @@ function renderScreen(productId: string) {
       <ThemeProvider>
         <TabBarVisibilityProvider>
           <CartProvider>
-            <ProductScreen productId={productId} />
+            <ProductScreen productId={productId} submit={submit} />
           </CartProvider>
         </TabBarVisibilityProvider>
       </ThemeProvider>
@@ -120,31 +121,26 @@ describe('ProductScreen', () => {
     expect(getByText('Volte a consultar mais tarde')).toBeTruthy();
   });
 
-  it('confirms the add on the button itself', () => {
+  it('confirms the add on the button itself', async () => {
     const { getByText, getByLabelText } = renderScreen('r4-1');
     fireEvent.press(getByText('Tradicional'));
     fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
-    expect(getByText('Adicionado ✓')).toBeTruthy();
+    await waitFor(() => expect(getByText('Adicionado ✓')).toBeTruthy());
   });
 
-  it('returns the button to its resting state so a second helping can be added', () => {
-    jest.useFakeTimers();
-    try {
-      const { getByText, getByLabelText } = renderScreen('r4-1');
-      fireEvent.press(getByText('Tradicional'));
-      fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
-      expect(getByText('Adicionado ✓')).toBeTruthy();
+  it('returns the button to its resting state so a second helping can be added', async () => {
+    const { getByText, getByLabelText } = renderScreen('r4-1');
+    fireEvent.press(getByText('Tradicional'));
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
+    await waitFor(() => expect(getByText('Adicionado ✓')).toBeTruthy());
 
-      act(() => {
-        jest.advanceTimersByTime(2000);
-      });
-      expect(getByText('Adicionar ao carrinho · 3.000 Kz')).toBeTruthy();
-    } finally {
-      jest.useRealTimers();
-    }
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1600));
+    });
+    expect(getByText('Adicionar ao carrinho · 3.000 Kz')).toBeTruthy();
   });
 
-  it('shows what the cart now holds, and what it costs', () => {
+  it('shows what the cart now holds, and what it costs', async () => {
     const { getByText, getByLabelText, queryByText } = renderScreen('r4-1');
     expect(queryByText(/Ver carrinho/)).toBeNull();
 
@@ -152,22 +148,21 @@ describe('ProductScreen', () => {
     fireEvent.press(getByText('Bacon'));
     fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.700 Kz'));
 
-    expect(getByText('1 item · 3.700 Kz · Ver carrinho')).toBeTruthy();
+    await waitFor(() => expect(getByText('1 item · 3.700 Kz · Ver carrinho')).toBeTruthy());
   });
 
-  it('counts a second helping into the cart bar', () => {
+  it('counts a second helping into the cart bar', async () => {
     const { getByText, getByLabelText } = renderScreen('r4-1');
     fireEvent.press(getByText('Tradicional'));
     fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
-    fireEvent.press(getByLabelText('Ver carrinho, 1 item, 3.000 Kz'));
-    expect(getByText('1 item · 3.000 Kz · Ver carrinho')).toBeTruthy();
+    await waitFor(() => expect(getByText('1 item · 3.000 Kz · Ver carrinho')).toBeTruthy());
   });
 
-  it('adds one line per unit of quantity', () => {
+  it('adds one line per unit of quantity', async () => {
     const { getByText, getByLabelText } = renderScreen('r4-4');
     fireEvent.press(getByLabelText('Aumentar quantidade'));
     fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.600 Kz'));
-    expect(getByText('2 itens · 3.600 Kz · Ver carrinho')).toBeTruthy();
+    await waitFor(() => expect(getByText('2 itens · 3.600 Kz · Ver carrinho')).toBeTruthy());
   });
 });
 
@@ -202,5 +197,103 @@ describe('ProductScreen reference sections', () => {
   it('shows no section list for a product that carries none', () => {
     const { queryByText } = renderScreen('r4-4');
     expect(queryByText('Ingredientes')).toBeNull();
+  });
+});
+
+describe('ProductScreen when the submission does not go through', () => {
+  const configure = (getByText: (t: string) => unknown) => {
+    fireEvent.press(getByText('Tradicional') as never);
+  };
+
+  it('names the failure and keeps every choice', async () => {
+    const submit = createCartSubmitter({ latencyMs: 0, failWith: { reason: 'failed' } });
+    const { getByText, getByLabelText } = renderScreen('r4-1', submit);
+    configure(getByText);
+    fireEvent.press(getByText('Bacon'));
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.700 Kz'));
+
+    await waitFor(() => expect(getByText('Não foi possível adicionar ao carrinho.')).toBeTruthy());
+    // The configuration survives the failure, which is the whole promise.
+    expect(getByText('1/3')).toBeTruthy();
+    expect(getByText('Tentar novamente')).toBeTruthy();
+  });
+
+  it('adds nothing to the cart when the submission fails', async () => {
+    const submit = createCartSubmitter({ latencyMs: 0, failWith: { reason: 'failed' } });
+    const { getByText, getByLabelText, queryByText } = renderScreen('r4-1', submit);
+    configure(getByText);
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
+
+    await waitFor(() => expect(getByText('Tentar novamente')).toBeTruthy());
+    expect(queryByText(/Ver carrinho/)).toBeNull();
+  });
+
+  /*
+   * Board 02: "Retry idempotente; impedir duplicação acidental." A retry
+   * that succeeds must leave one line, not two.
+   */
+  it('reuses the same key on retry, so a recovered attempt adds one line', async () => {
+    const keys: string[] = [];
+    let failing = true;
+    const submit: CartSubmitter = async (request) => {
+      keys.push(request.key);
+      if (failing) {
+        failing = false;
+        return { ok: false, reason: 'failed' };
+      }
+      return { ok: true };
+    };
+
+    const { getByText, getByLabelText } = renderScreen('r4-1', submit);
+    configure(getByText);
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
+    await waitFor(() => expect(getByText('Tentar novamente')).toBeTruthy());
+
+    fireEvent.press(getByText('Tentar novamente'));
+    await waitFor(() => expect(getByText('1 item · 3.000 Kz · Ver carrinho')).toBeTruthy());
+
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toBe(keys[1]);
+  });
+
+  it('pauses and names what survived when there is no connection', async () => {
+    const submit = createCartSubmitter({ latencyMs: 0, failWith: { reason: 'offline' } });
+    const { getByText, getByLabelText } = renderScreen('r4-1', submit);
+    configure(getByText);
+    fireEvent.press(getByText('Bacon'));
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.700 Kz'));
+
+    await waitFor(() => expect(getByText('Sem conexão')).toBeTruthy());
+    expect(getByText('Tradicional e Bacon estão preservados.')).toBeTruthy();
+  });
+
+  it('reports a total that could not be worked out, keeping the choices', async () => {
+    const submit = createCartSubmitter({ latencyMs: 0, failWith: { reason: 'pricing' } });
+    const { getByText, getByLabelText } = renderScreen('r4-1', submit);
+    configure(getByText);
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
+
+    await waitFor(() => expect(getByText('Não foi possível calcular o total.')).toBeTruthy());
+    expect(getByText('As escolhas continuam aqui. Tente novamente.')).toBeTruthy();
+  });
+
+  /*
+   * Board 04, "Offline + produto actualizado": show before and after, and
+   * require a fresh confirmation rather than charging the new price quietly.
+   */
+  it('shows a price that moved and reprices the whole screen before confirming', async () => {
+    const submit = createCartSubmitter({
+      latencyMs: 0,
+      failWith: { reason: 'priceChanged', newPrice: 4800 },
+    });
+    const { getByText, getByLabelText, getAllByText } = renderScreen('r4-1', submit);
+    configure(getByText);
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
+
+    await waitFor(() => expect(getByText('Produto actualizado')).toBeTruthy());
+    expect(getByText('Preço base alterado de 3.000 Kz para 4.800 Kz.')).toBeTruthy();
+    // The header, the breakdown and the button all move to the new figure.
+    expect(getAllByText('4.800 Kz').length).toBeGreaterThan(0);
+    expect(getByText('Tentar novamente')).toBeTruthy();
   });
 });

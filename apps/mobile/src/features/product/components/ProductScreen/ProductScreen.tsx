@@ -14,13 +14,14 @@ import type { CartSelection } from '@/hooks/CartProvider';
 import { useCart } from '@/hooks/useCart';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
+import { submitToCart, type CartSubmitter } from '../../cartSubmission';
 import { content } from '../../content';
 import { getProductById } from '../../data';
 import { computeTotal, computeUnitPrice } from '../../pricing';
 import { findFirstIncompleteGroup, isRadioGroup, isOptionSelectable } from '../../validation';
 import { ModifierGroupCard } from '../ModifierGroupCard';
 import { ProductDisclosures } from '../ProductDisclosures';
-import { ProductFooter } from '../ProductFooter';
+import { ProductFooter, type SubmissionState } from '../ProductFooter';
 import { ProductHeader } from '../ProductHeader';
 import { ProductHero, COLLAPSE_RANGE, HERO_MAX_HEIGHT } from '../ProductHero';
 import { ProductNoteField } from '../ProductNoteField';
@@ -37,10 +38,12 @@ const ADDED_CONFIRMATION_DURATION = 1500;
 
 export type ProductScreenProps = {
   productId: string;
+  /** Injected by tests so every failure the board draws can be exercised. */
+  submit?: CartSubmitter;
 };
 
 /** The product detail screen — Figma page 64:2470. */
-export function ProductScreen({ productId }: ProductScreenProps) {
+export function ProductScreen({ productId, submit = submitToCart }: ProductScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { addItem, count: cartCount, subtotal: cartSubtotal } = useCart();
@@ -62,7 +65,20 @@ export function ProductScreen({ productId }: ProductScreenProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [errorGroupId, setErrorGroupId] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState(false);
+  const [submission, setSubmission] = useState<SubmissionState>({ kind: 'idle' });
+  /**
+   * The base price the server last told us about, once it disagreed with the
+   * catalogue. Held so the header and the total can show what will actually
+   * be charged before the customer confirms it again.
+   */
+  const [revisedPrice, setRevisedPrice] = useState<number | null>(null);
   const addedTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /**
+   * The idempotency key of the attempt in progress. A retry reuses it, so a
+   * submission that already succeeded server-side cannot be counted twice;
+   * it is cleared once the attempt settles.
+   */
+  const attemptKey = useRef<string | null>(null);
 
   useEffect(() => () => clearTimeout(addedTimeout.current), []);
 
@@ -135,23 +151,73 @@ export function ProductScreen({ productId }: ProductScreenProps) {
     }
   }, [product, selections, reducedMotion, scrollRef]);
 
-  const handleAdd = useCallback(() => {
-    if (!product || justAdded) return;
-    const unitPrice = computeUnitPrice(product, selections);
+  const handleAdd = useCallback(async () => {
+    if (!product || justAdded || submission.kind === 'adding') return;
+
+    const priced = revisedPrice === null ? product : { ...product, price: revisedPrice };
+    const unitPrice = computeUnitPrice(priced, selections);
+
+    // A retry reuses the key of the attempt that failed; only a fresh press
+    // mints a new one.
+    const key = attemptKey.current ?? `${product.id}-${Date.now()}`;
+    attemptKey.current = key;
+
+    setSubmission({ kind: 'adding' });
+    const result = await submit({ key, productId: product.id, quantity, unitPrice });
+
+    if (!result.ok) {
+      if (result.reason === 'priceChanged') {
+        // The customer confirms the new price with a fresh attempt, so the
+        // old key is retired along with the old number.
+        setRevisedPrice(result.newPrice);
+        attemptKey.current = null;
+        setSubmission({
+          kind: 'failed',
+          reason: 'priceChanged',
+          newPrice: result.newPrice,
+          previousPrice: priced.price,
+        });
+        return;
+      }
+      setSubmission({ kind: 'failed', reason: result.reason });
+      return;
+    }
+
     const trimmed = notes.trim() || undefined;
     for (let index = 0; index < quantity; index += 1) {
-      addItem(product, { selections, notes: trimmed, unitPrice });
+      addItem(priced, { selections, notes: trimmed, unitPrice });
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
+    attemptKey.current = null;
+    setSubmission({ kind: 'idle' });
 
     // Without this the press has no visible consequence at all: the cart is
     // a screen away, and the button would go on reading "Adicionar" as if
     // nothing had happened.
     setJustAdded(true);
     addedTimeout.current = setTimeout(() => setJustAdded(false), ADDED_CONFIRMATION_DURATION);
-  }, [product, selections, notes, quantity, addItem, justAdded]);
+  }, [product, selections, notes, quantity, addItem, justAdded, submission.kind, submit, revisedPrice]);
 
-  if (!product) {
+  /** The option labels the offline message names as surviving. */
+  const preservedLabels = useMemo(
+    () =>
+      selections.flatMap((selection) => {
+        const group = groups.find((candidate) => candidate.id === selection.groupId);
+        if (!group) return [];
+        return selection.optionIds.flatMap((optionId) => {
+          const option = group.options.find((candidate) => candidate.id === optionId);
+          return option ? [option.label] : [];
+        });
+      }),
+    [selections, groups]
+  );
+
+  // Everything below prices against the revised figure once the server has
+  // corrected us, so the header, the breakdown and the button agree.
+  const priced = product && revisedPrice !== null ? { ...product, price: revisedPrice } : product;
+
+  if (!product || !priced) {
     return (
       <NotFoundScreen>
         <Text color="secondary">{content.notFound}</Text>
@@ -169,7 +235,7 @@ export function ProductScreen({ productId }: ProductScreenProps) {
         showsVerticalScrollIndicator={false}
       >
         <Detail>
-          <ProductHeader product={product} selections={selections} />
+          <ProductHeader product={priced} selections={selections} />
 
           {groups.length > 0 ? (
             <Groups>
@@ -224,7 +290,7 @@ export function ProductScreen({ productId }: ProductScreenProps) {
       />
 
       <ProductFooter
-        product={product}
+        product={priced}
         selections={selections}
         quantity={quantity}
         bottomInset={insets.bottom}
@@ -234,6 +300,8 @@ export function ProductScreen({ productId }: ProductScreenProps) {
         cartCount={cartCount}
         cartTotal={cartSubtotal}
         onOpenCart={() => router.push('/cart')}
+        submission={submission}
+        preservedLabels={preservedLabels}
       />
     </Screen>
   );

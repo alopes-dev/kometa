@@ -18,6 +18,16 @@ export const content = {
     'O produto continua visível para preservar contexto, preço e informação. Não prometemos uma hora de regresso.',
   ctaUnavailable: 'Indisponível',
   ctaAdded: 'Adicionado ✓',
+  ctaAdding: 'A adicionar…',
+  ctaRetry: 'Tentar novamente',
+
+  /** Board 02, "Feedback · no contexto". Each says what survived the failure. */
+  errorAddTitle: 'Não foi possível adicionar ao carrinho.',
+  errorAddBody: 'Nada foi duplicado. Tente adicionar novamente.',
+  errorPricingTitle: 'Não foi possível calcular o total.',
+  errorPricingBody: 'As escolhas continuam aqui. Tente novamente.',
+  offlineTitle: 'Sem conexão',
+  priceChangedTitle: 'Produto actualizado',
   ctaNeedsChoices: 'Escolher opções',
   back: 'Voltar',
   share: 'Partilhar',
@@ -90,6 +100,20 @@ export const content = {
 
   cartBarAnnouncement(count: number, total: number): string {
     return `Ver carrinho, ${count} ${count === 1 ? 'item' : 'itens'}, ${formatKwanza(total)}`;
+  },
+
+  /** "Bacon, Extra queijo e Sesame estão preservados." — board 04, offline. */
+  offlineBody(labels: string[]): string {
+    if (labels.length === 0) return 'A tua configuração está preservada.';
+    const head = labels.slice(0, -1).join(', ');
+    const tail = labels[labels.length - 1];
+    const list = head ? `${head} e ${tail}` : tail;
+    return `${list} ${labels.length === 1 ? 'está preservado' : 'estão preservados'}.`;
+  },
+
+  /** "Preço base alterado de 4.500 Kz para 4.800 Kz." — board 04. */
+  priceChangedBody(from: number, to: number): string {
+    return `Preço base alterado de ${formatKwanza(from)} para ${formatKwanza(to)}.`;
   },
 
   savings(amount: number): string {
