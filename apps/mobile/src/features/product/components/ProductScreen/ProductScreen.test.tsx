@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/components/design-system/ThemeProvider';
 import { CartProvider } from '@/hooks/CartProvider';
@@ -120,12 +120,53 @@ describe('ProductScreen', () => {
     expect(getByText('Volte a consultar mais tarde')).toBeTruthy();
   });
 
-  it('carries the configured line into the cart at the price shown', () => {
+  it('confirms the add on the button itself', () => {
     const { getByText, getByLabelText } = renderScreen('r4-1');
+    fireEvent.press(getByText('Tradicional'));
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
+    expect(getByText('Adicionado ✓')).toBeTruthy();
+  });
+
+  it('returns the button to its resting state so a second helping can be added', () => {
+    jest.useFakeTimers();
+    try {
+      const { getByText, getByLabelText } = renderScreen('r4-1');
+      fireEvent.press(getByText('Tradicional'));
+      fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
+      expect(getByText('Adicionado ✓')).toBeTruthy();
+
+      act(() => {
+        jest.advanceTimersByTime(2000);
+      });
+      expect(getByText('Adicionar ao carrinho · 3.000 Kz')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('shows what the cart now holds, and what it costs', () => {
+    const { getByText, getByLabelText, queryByText } = renderScreen('r4-1');
+    expect(queryByText(/Ver carrinho/)).toBeNull();
+
     fireEvent.press(getByText('Tradicional'));
     fireEvent.press(getByText('Bacon'));
     fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.700 Kz'));
-    // The cart bar the screen renders reflects what was added.
-    expect(getByText('Adicionar ao carrinho · 3.700 Kz')).toBeTruthy();
+
+    expect(getByText('1 item · 3.700 Kz · Ver carrinho')).toBeTruthy();
+  });
+
+  it('counts a second helping into the cart bar', () => {
+    const { getByText, getByLabelText } = renderScreen('r4-1');
+    fireEvent.press(getByText('Tradicional'));
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.000 Kz'));
+    fireEvent.press(getByLabelText('Ver carrinho, 1 item, 3.000 Kz'));
+    expect(getByText('1 item · 3.000 Kz · Ver carrinho')).toBeTruthy();
+  });
+
+  it('adds one line per unit of quantity', () => {
+    const { getByText, getByLabelText } = renderScreen('r4-4');
+    fireEvent.press(getByLabelText('Aumentar quantidade'));
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.600 Kz'));
+    expect(getByText('2 itens · 3.600 Kz · Ver carrinho')).toBeTruthy();
   });
 });

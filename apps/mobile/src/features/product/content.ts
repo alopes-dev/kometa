@@ -17,6 +17,7 @@ export const content = {
   unavailableExplainer:
     'O produto continua visível para preservar contexto, preço e informação. Não prometemos uma hora de regresso.',
   ctaUnavailable: 'Indisponível',
+  ctaAdded: 'Adicionado ✓',
   ctaNeedsChoices: 'Escolher opções',
   back: 'Voltar',
   share: 'Partilhar',
@@ -80,6 +81,15 @@ export const content = {
   /** The CTA announces its total, not just its verb. */
   addToCartAnnouncement(total: number): string {
     return `Adicionar ao carrinho, total ${formatKwanza(total)}`;
+  },
+
+  /** `1 item · 6.200 Kz · Ver carrinho` — board 03 A·03 and board 04 B·03. */
+  cartBar(count: number, total: number): string {
+    return `${count} ${count === 1 ? 'item' : 'itens'} · ${formatKwanza(total)} · Ver carrinho`;
+  },
+
+  cartBarAnnouncement(count: number, total: number): string {
+    return `Ver carrinho, ${count} ${count === 1 ? 'item' : 'itens'}, ${formatKwanza(total)}`;
   },
 
   savings(amount: number): string {

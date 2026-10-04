@@ -64,3 +64,26 @@ export const CtaLabel = styled.Text<{ enabled: boolean }>`
   color: ${({ theme, enabled }) =>
     enabled ? theme.colors.text.onBrand : theme.colors.text.disabled};
 `;
+
+/**
+ * `Carrinho` — board 03 A·03. What the cart holds now, directly above the
+ * action that put it there, so the confirmation and its cause are read
+ * together rather than in two corners of the screen.
+ */
+export const CartBar = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding-horizontal: 14px;
+  border-radius: ${({ theme }) => theme.product.metrics.ctaRadius}px;
+  ${continuousCorners}
+  background-color: ${({ theme }) => theme.colors.brand.subtle};
+  margin-bottom: ${({ theme }) => theme.product.metrics.footerRowGap}px;
+`;
+
+export const CartBarLabel = styled.Text`
+  ${productTextStyle('actionLabel')}
+  flex: 1;
+  color: ${({ theme }) => theme.colors.text.brand};
+`;

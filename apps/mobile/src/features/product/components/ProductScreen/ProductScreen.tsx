@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Share } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, {
@@ -26,6 +26,14 @@ import { ProductNoteField } from '../ProductNoteField';
 import { ProductQuantityRow } from '../ProductQuantityRow';
 import { Detail, Groups, NotFoundScreen, Screen } from './ProductScreen.styles';
 
+/**
+ * How long the button holds "Adicionado ✓" before returning to its resting
+ * label. The board draws the added state as a frame of its own, not an end
+ * state: the screen stays put, so the button has to become addable again for
+ * a second helping.
+ */
+const ADDED_CONFIRMATION_DURATION = 1500;
+
 export type ProductScreenProps = {
   productId: string;
 };
@@ -34,7 +42,7 @@ export type ProductScreenProps = {
 export function ProductScreen({ productId }: ProductScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { addItem } = useCart();
+  const { addItem, count: cartCount, subtotal: cartSubtotal } = useCart();
   const { setIsTabBarHidden } = useTabBarVisibility();
   const reducedMotion = useReducedMotion();
 
@@ -52,6 +60,10 @@ export function ProductScreen({ productId }: ProductScreenProps) {
   const [notes, setNotes] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
   const [errorGroupId, setErrorGroupId] = useState<string | null>(null);
+  const [justAdded, setJustAdded] = useState(false);
+  const addedTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(addedTimeout.current), []);
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollY = useSharedValue(0);
@@ -123,14 +135,20 @@ export function ProductScreen({ productId }: ProductScreenProps) {
   }, [product, selections, reducedMotion, scrollRef]);
 
   const handleAdd = useCallback(() => {
-    if (!product) return;
+    if (!product || justAdded) return;
     const unitPrice = computeUnitPrice(product, selections);
     const trimmed = notes.trim() || undefined;
     for (let index = 0; index < quantity; index += 1) {
       addItem(product, { selections, notes: trimmed, unitPrice });
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-  }, [product, selections, notes, quantity, addItem]);
+
+    // Without this the press has no visible consequence at all: the cart is
+    // a screen away, and the button would go on reading "Adicionar" as if
+    // nothing had happened.
+    setJustAdded(true);
+    addedTimeout.current = setTimeout(() => setJustAdded(false), ADDED_CONFIRMATION_DURATION);
+  }, [product, selections, notes, quantity, addItem, justAdded]);
 
   if (!product) {
     return (
@@ -203,6 +221,10 @@ export function ProductScreen({ productId }: ProductScreenProps) {
         bottomInset={insets.bottom}
         onAdd={handleAdd}
         onNeedsChoices={handleNeedsChoices}
+        justAdded={justAdded}
+        cartCount={cartCount}
+        cartTotal={cartSubtotal}
+        onOpenCart={() => router.push('/cart')}
       />
     </Screen>
   );
