@@ -1,10 +1,14 @@
+import { useRef } from 'react';
+import { Text as RNText } from 'react-native';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/components/design-system/ThemeProvider';
 import { CartProvider } from '@/hooks/CartProvider';
+import { useCart } from '@/hooks/useCart';
 import { TabBarVisibilityProvider } from '@/hooks/TabBarVisibilityProvider';
 import { ProductScreen } from './ProductScreen';
 import { createCartSubmitter, type CartSubmitter } from '../../cartSubmission';
+import { getProductById } from '../../data';
 
 // Navigation is the navigator's job; the screen only calls back() and
 // push(). Mocked here the way the flow suites already mock it.
@@ -295,5 +299,72 @@ describe('ProductScreen when the submission does not go through', () => {
     // The header, the breakdown and the button all move to the new figure.
     expect(getAllByText('4.800 Kz').length).toBeGreaterThan(0);
     expect(getByText('Tentar novamente')).toBeTruthy();
+  });
+});
+
+describe('ProductScreen editing a configuration that is already in the cart', () => {
+  /** Seeds the cart, then re-renders the screen pointed at the line it made. */
+  function renderEditing() {
+    const submit = createCartSubmitter({ latencyMs: 0 });
+    let lineId = '';
+
+    function Harness() {
+      const { addItem, items } = useCart();
+      const seeded = useRef(false);
+      if (!seeded.current) {
+        seeded.current = true;
+        addItem(getProductById('r4-1')!, {
+          selections: [{ groupId: 'pao', optionIds: ['pao-tradicional'] }],
+          unitPrice: 3000,
+        });
+      }
+      lineId = items[0]?.lineId ?? '';
+      return items.length > 0 ? (
+        <ProductScreen productId="r4-1" submit={submit} editingLineId={lineId} />
+      ) : null;
+    }
+
+    const utils = render(
+      <SafeAreaProvider
+        initialMetrics={{
+          frame: { x: 0, y: 0, width: 390, height: 844 },
+          insets: { top: 47, left: 0, right: 0, bottom: 34 },
+        }}
+      >
+        <ThemeProvider>
+          <TabBarVisibilityProvider>
+            <CartProvider>
+              <Harness />
+              <CartProbe />
+            </CartProvider>
+          </TabBarVisibilityProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    return utils;
+  }
+
+  function CartProbe() {
+    const { items, subtotal } = useCart();
+    return <RNText testID="cart">{`lines=${items.length} subtotal=${subtotal}`}</RNText>;
+  }
+
+  it('opens with the configuration the line already carries', () => {
+    const { getByText } = renderEditing();
+    // Seeded with Tradicional, so the CTA is ready rather than asking for a
+    // choice the customer already made.
+    expect(getByText('Adicionar ao carrinho · 3.000 Kz')).toBeTruthy();
+  });
+
+  it('replaces the line instead of adding a second one', async () => {
+    const { getByText, getByLabelText, getByTestId } = renderEditing();
+    expect(getByTestId('cart').props.children).toBe('lines=1 subtotal=3000');
+
+    fireEvent.press(getByText('Brioche'));
+    fireEvent.press(getByLabelText('Adicionar ao carrinho, total 3.300 Kz'));
+
+    await waitFor(() =>
+      expect(getByTestId('cart').props.children).toBe('lines=1 subtotal=3300')
+    );
   });
 });

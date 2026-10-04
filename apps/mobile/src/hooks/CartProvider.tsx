@@ -15,6 +15,11 @@ export type CartItem = {
   unitPrice: number;
 };
 
+export type ReplaceItemOptions = AddItemOptions & {
+  /** Defaults to the quantity of the line being replaced. */
+  quantity?: number;
+};
+
 export type AddItemOptions = {
   selections?: CartSelection[];
   notes?: string;
@@ -36,6 +41,12 @@ export type CartContextValue = {
   count: number;
   subtotal: number;
   addItem: (item: MenuItem, options?: AddItemOptions) => void;
+  /**
+   * Swap one configuration for another in place. Editing a line from the
+   * cart has to replace it: adding the edited version and leaving the
+   * original would grow the cart instead of changing it.
+   */
+  replaceItem: (lineId: string, item: MenuItem, options?: ReplaceItemOptions) => void;
   incrementItem: (lineId: string) => void;
   decrementItem: (lineId: string) => void;
   clearCart: () => void;
@@ -91,6 +102,44 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const replaceItem = useCallback(
+    (lineId: string, menuItem: MenuItem, options?: ReplaceItemOptions) => {
+      const selections = options?.selections ?? [];
+      const notes = options?.notes;
+      const nextLineId = buildLineId(menuItem, selections, notes);
+      const unitPrice = options?.unitPrice ?? menuItem.price;
+
+      setCart((current) => {
+        const existing = current.itemsById[lineId];
+        // A line that is already gone — removed in another tab, or edited
+        // twice — leaves the cart untouched rather than resurrecting itself.
+        if (!existing) return current;
+
+        const { [lineId]: _replaced, ...rest } = current.itemsById;
+        const quantity = options?.quantity ?? existing.quantity;
+        // Editing one configuration into another that already exists merges
+        // them, which is what the customer asked for by making them identical.
+        const merged = rest[nextLineId];
+
+        return {
+          restaurantId: menuItem.restaurantId,
+          itemsById: {
+            ...rest,
+            [nextLineId]: {
+              lineId: nextLineId,
+              item: menuItem,
+              quantity: (merged?.quantity ?? 0) + quantity,
+              selections,
+              notes,
+              unitPrice,
+            },
+          },
+        };
+      });
+    },
+    []
+  );
+
   const incrementItem = useCallback((lineId: string) => {
     setCart((current) => {
       const existing = current.itemsById[lineId];
@@ -134,11 +183,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
       count,
       subtotal,
       addItem,
+      replaceItem,
       incrementItem,
       decrementItem,
       clearCart,
     }),
-    [cart.restaurantId, items, count, subtotal, addItem, incrementItem, decrementItem, clearCart]
+    [
+      cart.restaurantId,
+      items,
+      count,
+      subtotal,
+      addItem,
+      replaceItem,
+      incrementItem,
+      decrementItem,
+      clearCart,
+    ]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

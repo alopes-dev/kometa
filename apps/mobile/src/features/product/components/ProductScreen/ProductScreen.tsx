@@ -38,20 +38,37 @@ const ADDED_CONFIRMATION_DURATION = 1500;
 
 export type ProductScreenProps = {
   productId: string;
+  /**
+   * The cart line this screen is editing, if it was opened from "Editar".
+   * Its configuration seeds the screen, and confirming replaces it rather
+   * than adding a second line.
+   */
+  editingLineId?: string;
   /** Injected by tests so every failure the board draws can be exercised. */
   submit?: CartSubmitter;
 };
 
 /** The product detail screen — Figma page 64:2470. */
-export function ProductScreen({ productId, submit = submitToCart }: ProductScreenProps) {
+export function ProductScreen({
+  productId,
+  editingLineId,
+  submit = submitToCart,
+}: ProductScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { addItem, count: cartCount, subtotal: cartSubtotal } = useCart();
+  const { addItem, replaceItem, items: cartItems, count: cartCount, subtotal: cartSubtotal } = useCart();
   const { setIsTabBarHidden } = useTabBarVisibility();
   const reducedMotion = useReducedMotion();
 
   const product = useMemo(() => getProductById(productId), [productId]);
   const groups = useMemo(() => product?.modifierGroups ?? [], [product]);
+
+  /** The line being edited, read once so later cart changes cannot reseed. */
+  const editedLine = useMemo(
+    () => (editingLineId ? cartItems.find((entry) => entry.lineId === editingLineId) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [editingLineId]
+  );
 
   /*
    * Nothing is pre-selected, including required single-choice groups. The
@@ -59,9 +76,9 @@ export function ProductScreen({ productId, submit = submitToCart }: ProductScree
    * pão" — only exists if a required group can start empty, and choosing on
    * the customer's behalf quietly commits them to an option they never read.
    */
-  const [selections, setSelections] = useState<CartSelection[]>([]);
-  const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState('');
+  const [selections, setSelections] = useState<CartSelection[]>(editedLine?.selections ?? []);
+  const [quantity, setQuantity] = useState(editedLine?.quantity ?? 1);
+  const [notes, setNotes] = useState(editedLine?.notes ?? '');
   const [isFavorite, setIsFavorite] = useState(false);
   const [errorGroupId, setErrorGroupId] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState(false);
@@ -184,8 +201,14 @@ export function ProductScreen({ productId, submit = submitToCart }: ProductScree
     }
 
     const trimmed = notes.trim() || undefined;
-    for (let index = 0; index < quantity; index += 1) {
-      addItem(priced, { selections, notes: trimmed, unitPrice });
+    if (editingLineId) {
+      // One call, carrying the quantity: an edit changes a line, it does not
+      // add quantity-many of them.
+      replaceItem(editingLineId, priced, { selections, notes: trimmed, unitPrice, quantity });
+    } else {
+      for (let index = 0; index < quantity; index += 1) {
+        addItem(priced, { selections, notes: trimmed, unitPrice });
+      }
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
@@ -197,7 +220,19 @@ export function ProductScreen({ productId, submit = submitToCart }: ProductScree
     // nothing had happened.
     setJustAdded(true);
     addedTimeout.current = setTimeout(() => setJustAdded(false), ADDED_CONFIRMATION_DURATION);
-  }, [product, selections, notes, quantity, addItem, justAdded, submission.kind, submit, revisedPrice]);
+  }, [
+    product,
+    selections,
+    notes,
+    quantity,
+    addItem,
+    replaceItem,
+    editingLineId,
+    justAdded,
+    submission.kind,
+    submit,
+    revisedPrice,
+  ]);
 
   /** The option labels the offline message names as surviving. */
   const preservedLabels = useMemo(

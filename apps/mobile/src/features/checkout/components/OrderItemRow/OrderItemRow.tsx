@@ -1,3 +1,4 @@
+import { Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { QuantityStepper, Text } from '@/components/design-system/atoms';
 import { formatKwanza } from '@/features/home/format';
@@ -9,9 +10,14 @@ export type OrderItemRowProps = {
   entry: CartItem;
   onIncrement: () => void;
   onDecrement: () => void;
+  /**
+   * Reopens the product with this configuration loaded. Omitted where there
+   * is nowhere to go back to — the row then simply states what was chosen.
+   */
+  onEdit?: () => void;
 };
 
-export function OrderItemRow({ entry, onIncrement, onDecrement }: OrderItemRowProps) {
+export function OrderItemRow({ entry, onIncrement, onDecrement, onEdit }: OrderItemRowProps) {
   const { item, quantity, selections, notes, unitPrice } = entry;
   return (
     <Container>
@@ -26,6 +32,18 @@ export function OrderItemRow({ entry, onIncrement, onDecrement }: OrderItemRowPr
           {describeCartLine(item, selections, notes)}
         </Text>
         <PriceText>{formatKwanza(unitPrice)}</PriceText>
+        {onEdit ? (
+          <Pressable
+            onPress={onEdit}
+            accessibilityRole="button"
+            accessibilityLabel={`Editar ${item.name}`}
+            hitSlop={8}
+          >
+            <Text variant="caption" color="brand">
+              Editar
+            </Text>
+          </Pressable>
+        ) : null}
       </Info>
       <QuantityStepper quantity={quantity} onIncrement={onIncrement} onDecrement={onDecrement} />
     </Container>

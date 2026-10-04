@@ -71,3 +71,36 @@ describe('OrderItemRow', () => {
     expect(onDecrement).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('OrderItemRow with an edit affordance', () => {
+  const configured: CartItem = {
+    lineId: 'line-1',
+    item: burger,
+    quantity: 1,
+    selections: [{ groupId: 'pao', optionIds: ['pao-brioche'] }],
+    notes: undefined,
+    unitPrice: 3300,
+  };
+
+  it('offers no edit link when nothing can be edited', () => {
+    const { queryByText } = renderWithTheme(
+      <OrderItemRow entry={configured} onIncrement={() => {}} onDecrement={() => {}} />
+    );
+    expect(queryByText('Editar')).toBeNull();
+  });
+
+  it('offers an edit link that names the line it edits', () => {
+    const onEdit = jest.fn();
+    const { getByText, getByLabelText } = renderWithTheme(
+      <OrderItemRow
+        entry={configured}
+        onIncrement={() => {}}
+        onDecrement={() => {}}
+        onEdit={onEdit}
+      />
+    );
+    expect(getByText('Editar')).toBeTruthy();
+    fireEvent.press(getByLabelText('Editar Cheeseburger Clássico'));
+    expect(onEdit).toHaveBeenCalledTimes(1);
+  });
+});

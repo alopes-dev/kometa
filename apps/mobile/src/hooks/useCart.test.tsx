@@ -218,3 +218,71 @@ describe('useCart with a caller-supplied unit price', () => {
     expect(result.current.subtotal).toBe(10777);
   });
 })
+
+/**
+ * Editing a configuration from the cart. The board offers "Editar" on each
+ * line; without a replace, re-adding the edited configuration would leave
+ * the original behind and the cart would grow instead of change.
+ */
+describe('useCart replacing one configuration with another', () => {
+  const sesame = [{ groupId: 'pao', optionIds: ['pao-tradicional'] }];
+  const brioche = [{ groupId: 'pao', optionIds: ['pao-brioche'] }];
+
+  it('swaps the line for the new configuration, leaving one', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => result.current.addItem(burger, { selections: sesame, unitPrice: 3000 }));
+    const original = result.current.items[0].lineId;
+
+    act(() =>
+      result.current.replaceItem(original, burger, { selections: brioche, unitPrice: 3300 })
+    );
+
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].selections).toEqual(brioche);
+    expect(result.current.subtotal).toBe(3300);
+  });
+
+  it('carries the quantity of the line it replaces', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => result.current.addItem(burger, { selections: sesame, unitPrice: 3000 }));
+    act(() => result.current.addItem(burger, { selections: sesame, unitPrice: 3000 }));
+    const original = result.current.items[0].lineId;
+    expect(result.current.items[0].quantity).toBe(2);
+
+    act(() =>
+      result.current.replaceItem(original, burger, {
+        selections: brioche,
+        unitPrice: 3300,
+        quantity: 2,
+      })
+    );
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].quantity).toBe(2);
+    expect(result.current.subtotal).toBe(6600);
+  });
+
+  it('leaves other configurations of the same product alone', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => result.current.addItem(burger, { selections: sesame, unitPrice: 3000 }));
+    act(() => result.current.addItem(burger, { selections: brioche, unitPrice: 3300 }));
+    const first = result.current.items[0].lineId;
+
+    act(() =>
+      result.current.replaceItem(first, burger, {
+        selections: [{ groupId: 'extras', optionIds: ['extra-bacon'] }],
+        unitPrice: 3700,
+      })
+    );
+
+    expect(result.current.items).toHaveLength(2);
+    expect(result.current.subtotal).toBe(7000);
+  });
+
+  it('does nothing when the line is already gone', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => result.current.addItem(burger, { selections: sesame, unitPrice: 3000 }));
+    act(() => result.current.replaceItem('no-such-line', burger, { unitPrice: 9999 }));
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.subtotal).toBe(3000);
+  });
+});

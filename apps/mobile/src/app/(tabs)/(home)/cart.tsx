@@ -12,6 +12,7 @@ import { getRestaurantById } from '@/features/home/data';
 import { formatKwanza } from '@/features/home/format';
 import { OrderItemRow } from '@/features/checkout/components/OrderItemRow';
 import { OrderSummaryCard } from '@/features/checkout/components/OrderSummaryCard';
+import { countSeparateConfigurations } from '@/features/checkout/configurations';
 import { TIP_PRESETS } from '@/features/checkout/mockData';
 import { computeOrderSummary } from '@/features/checkout/pricing';
 
@@ -40,6 +41,15 @@ const Content = styled.View`
   padding-horizontal: ${({ theme }) => theme.spacing[16]}px;
   gap: ${({ theme }) => theme.spacing[24]}px;
   padding-bottom: ${({ theme }) => theme.spacing[32]}px;
+`;
+
+/**
+ * Board 05 E. Two lines of the same product read as a double-count unless
+ * the cart says why they are separate.
+ */
+const ConfigurationNote = styled.View`
+  gap: ${({ theme }) => theme.spacing[4]}px;
+  margin-bottom: ${({ theme }) => theme.spacing[12]}px;
 `;
 
 const SectionLabel = styled.Text`
@@ -133,6 +143,7 @@ export default function Cart() {
   const insets = useSafeAreaInsets();
   const { setIsTabBarHidden } = useTabBarVisibility();
   const { items, restaurantId, subtotal, incrementItem, decrementItem } = useCart();
+  const separateConfigurations = countSeparateConfigurations(items);
   const { tipPercent, setTipPercent, couponCode, discountPercent, applyCoupon, notes, setNotes } = useCheckoutFlow();
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
@@ -180,6 +191,14 @@ export default function Cart() {
         <Content>
           <View>
             <SectionLabel>Seu Pedido</SectionLabel>
+            {separateConfigurations > 1 ? (
+              <ConfigurationNote>
+                <Text variant="h3">{`${separateConfigurations} configurações`}</Text>
+                <Text variant="caption" color="secondary">
+                  O mesmo produto permanece separado para não misturar escolhas.
+                </Text>
+              </ConfigurationNote>
+            ) : null}
             <Card>
               {items.map((entry, index) => (
                 <Fragment key={entry.lineId}>
@@ -188,6 +207,9 @@ export default function Cart() {
                     entry={entry}
                     onIncrement={() => incrementItem(entry.lineId)}
                     onDecrement={() => decrementItem(entry.lineId)}
+                    onEdit={() =>
+                      router.push(`/product/${entry.item.id}?lineId=${encodeURIComponent(entry.lineId)}`)
+                    }
                   />
                 </Fragment>
               ))}
