@@ -19,9 +19,13 @@ function groupsOf(product: Product): ModifierGroup[] {
 /**
  * At most one group may set the base price. The board never draws two, and a
  * second would make "A partir de" ambiguous — which variation is it from?
+ *
+ * A group with no options is ignored: it cannot set a base, and treating it
+ * as one makes the cheapest-of-nothing `Infinity`, which reaches the header
+ * as "A partir de Infinity Kz".
  */
 function absoluteGroup(product: Product): ModifierGroup | undefined {
-  return groupsOf(product).find((group) => group.pricing === 'absolute');
+  return groupsOf(product).find((group) => group.pricing === 'absolute' && group.options.length > 0);
 }
 
 /** The chosen option of a group, or undefined — an unknown id resolves to nothing. */
@@ -75,12 +79,15 @@ export function resolveHeadlinePrice(
   product: Product,
   selections: CartSelection[]
 ): HeadlinePrice {
-  if (isOffer(product)) {
-    const previous = product.previousPrice!;
-    return { kind: 'offer', value: product.price, previous, savings: previous - product.price };
-  }
-
   const group = absoluteGroup(product);
+
+  /*
+   * The variation outranks the discount, and deliberately so. A
+   * `previousPrice` is a claim about `item.price`, which an absolute group
+   * replaces — so announcing the discount on a product that has both would
+   * quote a number the footer does not charge. The variation is what the
+   * customer pays, so it is what the header says.
+   */
   if (group) {
     const chosen = chosenOption(group, selections);
     // "A partir de" survives until the variation is decided. Extras never
@@ -91,6 +98,11 @@ export function resolveHeadlinePrice(
       return { kind: 'from', value: Math.min(...group.options.map((option) => option.price)) };
     }
     return { kind: 'variant', value: chosen.price, variantLabel: chosen.label };
+  }
+
+  if (isOffer(product)) {
+    const previous = product.previousPrice!;
+    return { kind: 'offer', value: product.price, previous, savings: previous - product.price };
   }
 
   return { kind: 'exact', value: product.price };
@@ -105,7 +117,12 @@ export function formatBreakdown(
   selections: CartSelection[],
   quantity: number
 ): string {
-  if (isOffer(product)) {
+  const group = absoluteGroup(product);
+
+  // The flat discount line only stands in for a composition when there is
+  // none. With a variation or extras in play, the sum has to be spelled out
+  // or the footer stops explaining the total it shows.
+  if (isOffer(product) && !group && sumDeltas(product, selections) === 0) {
     return `${quantity} un. · preço com desconto`;
   }
 
@@ -113,7 +130,6 @@ export function formatBreakdown(
     return `${quantity} un. × ${formatKwanza(product.price)}`;
   }
 
-  const group = absoluteGroup(product);
   const chosen = group ? chosenOption(group, selections) : undefined;
   const base = resolveBasePrice(product, selections);
   const extras = sumDeltas(product, selections);

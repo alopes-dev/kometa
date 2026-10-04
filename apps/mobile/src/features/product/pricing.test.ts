@@ -131,3 +131,53 @@ describe('formatBreakdown', () => {
     expect(formatBreakdown(milkshake, [], 3)).toBe('3 un. × 1.800 Kz');
   });
 });
+
+/**
+ * Combinations the fixtures never build, found in the final review. Both
+ * reach the price the customer is charged, so both are pinned here.
+ */
+describe('resolveHeadlinePrice on a product with both a discount and a variation', () => {
+  // previousPrice is a figure about `item.price`, and an absolute group
+  // replaces `item.price`. Announcing the discount would quote a number the
+  // footer does not charge.
+  const discountedPizza = { ...pizza, price: 4000, previousPrice: 5000 };
+
+  it('lets the variation decide the headline rather than the discount', () => {
+    expect(resolveHeadlinePrice(discountedPizza, large)).toEqual({
+      kind: 'variant',
+      value: 6000,
+      variantLabel: 'Grande',
+    });
+  });
+
+  it('still says "a partir de" while the variation is undecided', () => {
+    expect(resolveHeadlinePrice(discountedPizza, [])).toEqual({ kind: 'from', value: 4000 });
+  });
+
+  it('breaks the price down by composition, not as a flat discount', () => {
+    expect(formatBreakdown(discountedPizza, [...large, ...pizzaExtras], 1)).toBe(
+      'Grande 6.000 Kz + extras 1.700 Kz'
+    );
+  });
+
+  it('charges the variation, matching the headline', () => {
+    expect(computeUnitPrice(discountedPizza, large)).toBe(6000);
+  });
+});
+
+describe('resolveHeadlinePrice on a malformed absolute group', () => {
+  const emptyVariation = {
+    ...pizza,
+    modifierGroups: [{ ...pizza.modifierGroups![0], options: [] }],
+  };
+
+  // Math.min of nothing is Infinity, which would render as "A partir de
+  // Infinity Kz" on the header.
+  it('falls back to the item price when the variation has no options', () => {
+    expect(resolveHeadlinePrice(emptyVariation, [])).toEqual({ kind: 'exact', value: 4000 });
+  });
+
+  it('prices the item at its own price', () => {
+    expect(computeUnitPrice(emptyVariation, [])).toBe(4000);
+  });
+});
