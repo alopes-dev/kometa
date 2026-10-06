@@ -86,8 +86,10 @@ export function CartScreen() {
           lineId: entry.lineId,
           productId: entry.item.id,
           name: entry.item.name,
-          unitPrice: entry.unitPrice,
-          quantity: entry.quantity,
+          // The menu price the line was built from — `unitPrice` carries the
+          // modifiers on top of it and would read as a price change.
+          basePrice: entry.item.price,
+          lineTotal: entry.unitPrice * entry.quantity,
         })),
         { catalogue: readCatalogue(restaurantId) }
       );

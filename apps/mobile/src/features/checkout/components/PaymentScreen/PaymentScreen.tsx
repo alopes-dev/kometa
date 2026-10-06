@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { getRestaurantById } from '@/features/home/data';
 import { useCart } from '@/hooks/useCart';
@@ -44,9 +44,13 @@ const Note = styled.Text`
  */
 export function PaymentScreen() {
   const router = useRouter();
+  const { simulate } = useLocalSearchParams<{ simulate?: 'unavailable' }>();
   const { subtotal, restaurantId } = useCart();
   const { paymentMethodId, setPaymentMethodId, promoCode } = useCheckoutFlow();
-  const [digitalAvailable, setDigitalAvailable] = useState(true);
+  // Board 12's third screen needs a provider outage to exist. There is none in
+  // this build, so `?simulate=unavailable` stands in for one — the same seam
+  // the status screen uses to make a pending and a refused payment reachable.
+  const [digitalAvailable, setDigitalAvailable] = useState(simulate !== 'unavailable');
   const [showMissing, setShowMissing] = useState(false);
 
   const merchant = restaurantId ? getRestaurantById(restaurantId) : undefined;

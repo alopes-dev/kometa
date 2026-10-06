@@ -1,8 +1,8 @@
 import { acceptChanges, revalidateCart, isCartBlocked } from './availability';
 
 const lines = [
-  { lineId: 'a', productId: 'r4-1', name: 'Classic Burger', unitPrice: 5500, quantity: 1 },
-  { lineId: 'b', productId: 'r4-5', name: 'Coca-Cola 1.5L', unitPrice: 1800, quantity: 1 },
+  { lineId: 'a', productId: 'r4-1', name: 'Classic Burger', basePrice: 5500, lineTotal: 5500 },
+  { lineId: 'b', productId: 'r4-5', name: 'Coca-Cola 1.5L', basePrice: 1800, lineTotal: 1800 },
 ];
 
 const catalogue = {
@@ -53,6 +53,29 @@ describe('revalidateCart', () => {
    * Board 15 draws all three banners stacked on one screen. Revalidation must
    * therefore report every change it finds, not stop at the first.
    */
+  /**
+   * A configured line costs more than the menu price it was built from. The
+   * check is against the base price, so extras never read as a price change.
+   */
+  it('does not report a customised line as having changed price', () => {
+    const configured = [
+      { lineId: 'a', productId: 'r4-1', name: 'Classic Burger', basePrice: 5500, lineTotal: 7200 },
+    ];
+    expect(revalidateCart(configured, { catalogue })).toEqual([]);
+  });
+
+  it('values an unavailable line at what it is worth in the cart, not at its base price', () => {
+    const configured = [
+      { lineId: 'b', productId: 'r4-5', name: 'Coca-Cola 1.5L', basePrice: 1800, lineTotal: 3600 },
+    ];
+    const changes = revalidateCart(configured, {
+      catalogue: { ...catalogue, 'r4-5': { price: 1800, available: false } },
+    });
+    expect(changes).toEqual([
+      { kind: 'unavailable', lineId: 'b', name: 'Coca-Cola 1.5L', amount: 3600 },
+    ]);
+  });
+
   it('reports every change at once', () => {
     const changes = revalidateCart(lines, {
       catalogue: {

@@ -14,8 +14,15 @@ export type CartLineSnapshot = {
   lineId: string;
   productId: string;
   name: string;
-  unitPrice: number;
-  quantity: number;
+  /**
+   * The catalogue price of the product when it was added — NOT the configured
+   * unit price. A burger with two extras costs more than the menu says it
+   * does, so comparing the configured figure against the catalogue would
+   * report a price change on every customised line.
+   */
+  basePrice: number;
+  /** What the line is worth in the cart, used when it has to leave the total. */
+  lineTotal: number;
 };
 
 export type CatalogueEntry = { price: number; available: boolean };
@@ -48,16 +55,16 @@ export function revalidateCart(
         kind: 'unavailable',
         lineId: line.lineId,
         name: line.name,
-        amount: line.unitPrice * line.quantity,
+        amount: line.lineTotal,
       });
       continue;
     }
-    if (current.price !== line.unitPrice) {
+    if (current.price !== line.basePrice) {
       changes.push({
         kind: 'price-changed',
         lineId: line.lineId,
         name: line.name,
-        from: line.unitPrice,
+        from: line.basePrice,
         to: current.price,
       });
     }
