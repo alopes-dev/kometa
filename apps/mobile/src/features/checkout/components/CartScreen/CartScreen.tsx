@@ -5,6 +5,7 @@ import { getMenuItems, getRestaurantById } from '@/features/home/data';
 import { describeCartLine } from '@/features/checkout/cartDisplay';
 import { useCart } from '@/hooks/useCart';
 import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
+import { useCheckoutSession } from '@/hooks/useCheckoutSession';
 import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
 import type { MenuItem } from '@/features/home/types';
 import type { CartItem } from '@/hooks/CartProvider';
@@ -18,6 +19,7 @@ import { readCatalogue } from '../../catalogue';
 import { deriveCartStatus, deriveCtaContract } from '../../checkoutState';
 import { content } from '../../content';
 import { evaluateMinimum } from '../../minimum';
+import { mockAddresses } from '../../mockData';
 import { computeOrderSummary } from '../../pricing';
 import { evaluatePromo, promoDiscount } from '../../promotions';
 import { CartItemRow } from '../CartItemRow';
@@ -56,6 +58,7 @@ export function CartScreen() {
     resolveConflict,
   } = useCart();
   const { promoCode } = useCheckoutFlow();
+  const { restored, discard } = useCheckoutSession();
 
   const [isLoading, setIsLoading] = useState(true);
   const [changes, setChanges] = useState<CartChange[]>([]);
@@ -185,6 +188,36 @@ export function CartScreen() {
   }
 
   if (items.length === 0 || !merchant) {
+    // Board 15, third screen. A saved session is offered before the empty
+    // state, because an empty cart that silently forgets a saved order is the
+    // one failure flow H exists to prevent.
+    const savedMerchant = restored ? getRestaurantById(restored.merchantId) : undefined;
+    if (restored && savedMerchant) {
+      return (
+        <Screen>
+          <ScreenHeader title={content.resumeTitle} caption={content.resumeCaption} />
+          <Body>
+            <MerchantContext merchant={savedMerchant} />
+            <FeedbackBanner
+              tone="info"
+              icon={{ name: 'time-outline', sf: 'clock.arrow.circlepath' }}
+              title={content.sessionTitle}
+              body={content.sessionBody(
+                restored.lines.length,
+                mockAddresses.find((address) => address.id === restored.addressId)?.label ?? '',
+                restored.promoCode
+              )}
+            />
+          </Body>
+          <CheckoutAction
+            contract={{ label: content.resumeOrder, tone: 'brand', enabled: true }}
+            onPress={() => router.push(`/restaurant/${restored.merchantId}`)}
+            secondary={[{ label: content.startOver, onPress: discard }]}
+          />
+        </Screen>
+      );
+    }
+
     return (
       <Screen>
         <ScreenHeader title={content.cartTitle} />
