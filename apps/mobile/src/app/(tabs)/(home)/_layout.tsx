@@ -1,5 +1,5 @@
-import { Stack } from "expo-router";
-import { HeroTransitionProvider } from "@/features/home/components/HeroTransition";
+import { Stack } from 'expo-router';
+import { HeroTransitionProvider } from '@/features/home/components/HeroTransition';
 
 export default function HomeLayout() {
   return (
@@ -21,7 +21,7 @@ export default function HomeLayout() {
           (see HeroTransitionProvider) reads as one continuous shape, which a
           directional slide would fight against.
         */}
-        <Stack.Screen name="restaurant/[id]" options={{ animation: "fade" }} />
+        <Stack.Screen name="restaurant/[id]" options={{ animation: 'fade' }} />
         <Stack.Screen name="product/[itemId]" />
         {/*
           The compact presentation. `fitToContents` lets a short product sit
@@ -32,25 +32,31 @@ export default function HomeLayout() {
         <Stack.Screen
           name="product/sheet/[itemId]"
           options={{
-            presentation: "formSheet",
-            sheetAllowedDetents: "fitToContents",
+            presentation: 'formSheet',
+            sheetAllowedDetents: 'fitToContents',
             sheetGrabberVisible: true,
             sheetCornerRadius: 20,
           }}
         />
-        <Stack.Screen name="cart" />
+        <Stack.Screen name="cart/index" />
+        <Stack.Screen name="cart/promo" />
 
         {/*
           Checkout is a sequence of decisions, each its own screen, so the back
-          gesture undoes exactly one choice. They push in order:
-          delivery-type → schedule → address → payment-method → checkout.
+          gesture undoes exactly one choice — Figma page 67:4561, flow A. They
+          push in order: address → instructions → payment → review → status.
         */}
-        <Stack.Screen name="delivery-type" />
-        <Stack.Screen name="schedule" />
-        <Stack.Screen name="address" />
-        <Stack.Screen name="payment-method/index" />
-        <Stack.Screen name="payment-method/details" />
-        <Stack.Screen name="checkout" />
+        <Stack.Screen name="checkout/address/index" />
+        <Stack.Screen name="checkout/address/new" />
+        <Stack.Screen name="checkout/instructions" />
+        <Stack.Screen name="checkout/payment" />
+        <Stack.Screen name="checkout/review" />
+        {/*
+          The payment is in flight here, so the swipe-back is disabled: board
+          14 blocks duplication at the moment of the tap, and a gesture that
+          unwinds the screen underneath a running submission would defeat that.
+        */}
+        <Stack.Screen name="checkout/status" options={{ gestureEnabled: false }} />
 
         {/*
           Post-purchase. These are destinations, not steps: once the order is

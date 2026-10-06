@@ -1,0 +1,1 @@
+export { NewAddressScreen } from './NewAddressScreen';

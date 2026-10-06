@@ -1,60 +1,61 @@
-import { Text } from '@/components/design-system/atoms';
-import { formatKwanza, formatDeliveryFee } from '@/features/home/format';
+import { formatKwanza } from '@/features/home/format';
+import { content } from '../../content';
 import type { OrderSummary } from '../../types';
-import { Container, Row, Divider } from './OrderSummaryCard.styles';
+import {
+  Card,
+  Divider,
+  Label,
+  Note,
+  Row,
+  TotalLabel,
+  TotalRow,
+  TotalValue,
+  Value,
+} from './OrderSummaryCard.styles';
 
 export type OrderSummaryCardProps = {
   summary: OrderSummary;
 };
 
+/**
+ * Subtotal, Entrega, Desconto, Total — in that order, with nothing between
+ * them and nothing hidden behind a disclosure.
+ *
+ * The discount line only appears when there is one, and it reads as a negative
+ * number in the brand colour (board 03): a discount written as a positive
+ * figure beside the others is read as another charge.
+ *
+ * Free delivery is the word "Grátis" rather than "0 Kz", and a surged fee
+ * carries its explanation, because board 19 · 05 requires the cause of the
+ * delivery figure to be legible.
+ */
 export function OrderSummaryCard({ summary }: OrderSummaryCardProps) {
+  const { subtotal, delivery, deliveryMode, discount, total } = summary;
+
   return (
-    <Container>
+    <Card accessibilityRole="summary">
       <Row>
-        <Text variant="bodyLarge" color="secondary">
-          Subtotal
-        </Text>
-        <Text variant="bodyLarge">{formatKwanza(summary.subtotal)}</Text>
+        <Label>{content.subtotal}</Label>
+        <Value>{formatKwanza(subtotal)}</Value>
       </Row>
       <Row>
-        <Text variant="bodyLarge" color="secondary">
-          Delivery
-        </Text>
-        <Text variant="bodyLarge" color={summary.delivery === 0 ? 'primary' : 'primary'}>
-          {formatDeliveryFee(summary.delivery)}
-        </Text>
+        <Label>{content.delivery}</Label>
+        <Value accent={deliveryMode === 'free'}>
+          {deliveryMode === 'free' ? content.free : formatKwanza(delivery)}
+        </Value>
       </Row>
-      {summary.discount > 0 ? (
+      {discount > 0 ? (
         <Row>
-          <Text variant="bodyLarge" color="secondary">
-            Desconto
-          </Text>
-          <Text variant="bodyLarge" color="brand">
-            -{formatKwanza(summary.discount)}
-          </Text>
+          <Label>{content.discount}</Label>
+          <Value accent>{`-${formatKwanza(discount)}`}</Value>
         </Row>
       ) : null}
-      {summary.tip > 0 ? (
-        <Row>
-          <Text variant="bodyLarge" color="secondary">
-            Gorjeta
-          </Text>
-          <Text variant="bodyLarge">{formatKwanza(summary.tip)}</Text>
-        </Row>
-      ) : null}
-      <Row>
-        <Text variant="bodyLarge" color="secondary">
-          VAT (14%)
-        </Text>
-        <Text variant="bodyLarge">{formatKwanza(summary.vat)}</Text>
-      </Row>
       <Divider />
-      <Row>
-        <Text variant="title">Total</Text>
-        <Text variant="title" color="brand">
-          {formatKwanza(summary.total)}
-        </Text>
-      </Row>
-    </Container>
+      <TotalRow>
+        <TotalLabel>{content.total}</TotalLabel>
+        <TotalValue>{formatKwanza(total)}</TotalValue>
+      </TotalRow>
+      {deliveryMode === 'dynamic' ? <Note>{content.dynamicDeliveryNote}</Note> : null}
+    </Card>
   );
 }

@@ -73,3 +73,19 @@ export const productTextStyle = (step: import('./product').ProductTypeStep) => c
 export const continuousCorners = css`
   border-curve: continuous;
 `;
+
+/**
+ * Applies a step from the checkout board's type scale — see `theme/checkout.ts`.
+ *
+ * A third twin of `boardTextStyle`, for the reason the second one gives: each
+ * accessor is bound to one board's scale, so `checkoutTextStyle('itemName')`
+ * cannot resolve against the product board by accident.
+ */
+export const checkoutTextStyle = (step: import('./checkout').CheckoutTypeStep) => css`
+  font-family: ${({ theme }) => theme.checkout.type[step].fontFamily};
+  font-size: ${({ theme }) => theme.checkout.type[step].fontSize}px;
+  ${({ theme }) => {
+    const resolved = theme.checkout.type[step];
+    return 'lineHeight' in resolved ? `line-height: ${resolved.lineHeight}px;` : '';
+  }}
+`;

@@ -1,50 +1,63 @@
-import { render } from '@testing-library/react-native';
-import { OrderSummaryCard } from './OrderSummaryCard';
+import { render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/components/design-system/ThemeProvider';
+import { OrderSummaryCard } from './OrderSummaryCard';
+import type { OrderSummary } from '../../types';
 
-function renderWithTheme(ui: React.ReactElement) {
-  return render(<ThemeProvider>{ui}</ThemeProvider>);
+const base: OrderSummary = {
+  subtotal: 12700,
+  delivery: 1200,
+  deliveryMode: 'normal',
+  discount: 0,
+  total: 13900,
+};
+
+function renderCard(summary: OrderSummary) {
+  return render(
+    <ThemeProvider>
+      <OrderSummaryCard summary={summary} />
+    </ThemeProvider>
+  );
 }
 
 describe('OrderSummaryCard', () => {
-  it('renders formatted subtotal, VAT, and total', () => {
-    const { getByText } = renderWithTheme(
-      <OrderSummaryCard summary={{ subtotal: 11600, delivery: 0, discount: 0, tip: 0, vat: 1624, total: 13224 }} />
-    );
-    expect(getByText('11.600 Kz')).toBeTruthy();
-    expect(getByText('1.624 Kz')).toBeTruthy();
-    expect(getByText('13.224 Kz')).toBeTruthy();
+  it('states subtotal, delivery and total', () => {
+    renderCard(base);
+    expect(screen.getByText('Subtotal')).toBeTruthy();
+    expect(screen.getByText('12.700 Kz')).toBeTruthy();
+    expect(screen.getByText('1.200 Kz')).toBeTruthy();
+    expect(screen.getByText('13.900 Kz')).toBeTruthy();
   });
 
-  it('renders "Grátis" for zero delivery fee', () => {
-    const { getByText } = renderWithTheme(
-      <OrderSummaryCard summary={{ subtotal: 1000, delivery: 0, discount: 0, tip: 0, vat: 140, total: 1140 }} />
-    );
-    expect(getByText('Grátis')).toBeTruthy();
+  /** Board 03: a discount is a negative line, not a reduced subtotal. */
+  it('writes a discount as a negative line and leaves the subtotal alone', () => {
+    renderCard({ ...base, discount: 1500, total: 12400 });
+    expect(screen.getByText('12.700 Kz')).toBeTruthy();
+    expect(screen.getByText('-1.500 Kz')).toBeTruthy();
+    expect(screen.getByText('12.400 Kz')).toBeTruthy();
   });
 
-  it('renders the formatted delivery fee when non-zero', () => {
-    const { getByText } = renderWithTheme(
-      <OrderSummaryCard summary={{ subtotal: 1000, delivery: 500, discount: 0, tip: 0, vat: 140, total: 1640 }} />
-    );
-    expect(getByText('500 Kz')).toBeTruthy();
+  it('omits the discount line when there is nothing to discount', () => {
+    renderCard(base);
+    expect(screen.queryByText('Desconto')).toBeNull();
   });
 
-  it('does not render discount or tip rows when both are zero', () => {
-    const { queryByText } = renderWithTheme(
-      <OrderSummaryCard summary={{ subtotal: 1000, delivery: 0, discount: 0, tip: 0, vat: 140, total: 1140 }} />
-    );
-    expect(queryByText('Desconto')).toBeNull();
-    expect(queryByText('Gorjeta')).toBeNull();
+  it('writes free delivery as a word rather than as a zero', () => {
+    renderCard({ ...base, delivery: 0, deliveryMode: 'free', total: 12700 });
+    expect(screen.getByText('Grátis')).toBeTruthy();
+    expect(screen.queryByText('0 Kz')).toBeNull();
   });
 
-  it('renders the discount and tip rows when present', () => {
-    const { getByText } = renderWithTheme(
-      <OrderSummaryCard summary={{ subtotal: 10000, delivery: 0, discount: 1000, tip: 1500, vat: 1400, total: 11900 }} />
-    );
-    expect(getByText('Desconto')).toBeTruthy();
-    expect(getByText('-1.000 Kz')).toBeTruthy();
-    expect(getByText('Gorjeta')).toBeTruthy();
-    expect(getByText('1.500 Kz')).toBeTruthy();
+  /** Board 09: a surged fee never appears without its cause. */
+  it('explains a dynamic fee', () => {
+    renderCard({ ...base, delivery: 1600, deliveryMode: 'dynamic', total: 14300 });
+    expect(screen.getByText('1.600 Kz')).toBeTruthy();
+    expect(
+      screen.getByText('Entrega ajustada por procura elevada. Vês sempre o preço antes de pagar.')
+    ).toBeTruthy();
+  });
+
+  it('says nothing extra about an ordinary fee', () => {
+    renderCard(base);
+    expect(screen.queryByText(/procura elevada/)).toBeNull();
   });
 });

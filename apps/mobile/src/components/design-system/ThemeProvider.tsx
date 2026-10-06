@@ -17,6 +17,7 @@ import {
   auth,
   business,
   product,
+  checkout,
   type SemanticColors,
   type ShadowGeometry,
   type ShadowLevel,
@@ -26,6 +27,7 @@ import {
   type AuthTokens,
   type BusinessTokens,
   type ProductTokens,
+  type CheckoutTokens,
 } from '@/theme';
 
 /**
@@ -77,6 +79,12 @@ export interface Theme {
    * `colors` rather than being frozen here.
    */
   product: ProductTokens;
+  /**
+   * Figma checkout-board tokens — the cart and the checkout path.
+   * Scheme-independent for the same reason as `product`, and its colours
+   * likewise come from `colors` rather than being frozen here.
+   */
+  checkout: CheckoutTokens;
 }
 
 const shared = {
@@ -85,6 +93,7 @@ const shared = {
   auth,
   business,
   product,
+  checkout,
   spacing,
   layout,
   radius,

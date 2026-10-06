@@ -1,43 +1,47 @@
 import { createContext, useCallback, useMemo, useState, type ReactNode } from 'react';
-import { VALID_COUPON } from '@/features/checkout/mockData';
-import type { PaymentMethodSelection } from '@/features/checkout/types';
+import type { Order, PaymentMethodId } from '@/features/checkout/types';
 
-export type DeliveryType = 'delivery' | 'pickup';
-
-export type ScheduleChoice = { type: 'now' } | { type: 'scheduled'; slotId: string; label: string };
-
+/**
+ * Everything the checkout path collects, in the shape board 19 · 03 declares.
+ *
+ * `Delivery` and `Payment` are the board's two entities, kept flat here
+ * because the screens read them one field at a time. What is deliberately
+ * absent is what no board draws: a tip, a schedule and a delivery-type switch.
+ * The Figma checkout is one decision per screen, and each of those three was a
+ * decision the customer was asked to make for no reason the design gives.
+ *
+ * Every field survives going back — board 13, "Voltar sem perder dados" —
+ * which is why `reset` is only ever called once an order is confirmed.
+ */
 export type CheckoutFlowState = {
-  deliveryType: DeliveryType | null;
-  schedule: ScheduleChoice | null;
   addressId: string | null;
-  tipPercent: number;
-  couponCode: string | null;
-  discountPercent: number;
-  notes: string;
-  paymentMethod: PaymentMethodSelection | null;
+  /** Board 11: ≤120 characters, free text, optional. */
+  instructions: string;
+  /** Board 11: used only to coordinate this delivery. */
+  phone: string;
+  paymentMethodId: PaymentMethodId | null;
+  promoCode: string | null;
+  /** The order, once one exists. Board 14 persists it before confirming. */
+  order: Order | null;
 };
 
 export type CheckoutFlowContextValue = CheckoutFlowState & {
-  setDeliveryType: (type: DeliveryType) => void;
-  setSchedule: (schedule: ScheduleChoice) => void;
   setAddressId: (id: string) => void;
-  setTipPercent: (percent: number) => void;
-  setNotes: (notes: string) => void;
-  applyCoupon: (code: string) => boolean;
-  clearCoupon: () => void;
-  setPaymentMethod: (selection: PaymentMethodSelection) => void;
+  setInstructions: (instructions: string) => void;
+  setPhone: (phone: string) => void;
+  setPaymentMethodId: (id: PaymentMethodId) => void;
+  setPromoCode: (code: string | null) => void;
+  setOrder: (order: Order | null) => void;
   reset: () => void;
 };
 
 const INITIAL_STATE: CheckoutFlowState = {
-  deliveryType: null,
-  schedule: null,
   addressId: null,
-  tipPercent: 0,
-  couponCode: null,
-  discountPercent: 0,
-  notes: '',
-  paymentMethod: null,
+  instructions: '',
+  phone: '',
+  paymentMethodId: null,
+  promoCode: null,
+  order: null,
 };
 
 export const CheckoutFlowContext = createContext<CheckoutFlowContextValue | null>(null);
@@ -45,46 +49,28 @@ export const CheckoutFlowContext = createContext<CheckoutFlowContextValue | null
 export function CheckoutFlowProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CheckoutFlowState>(INITIAL_STATE);
 
-  const setDeliveryType = useCallback((deliveryType: DeliveryType) => {
-    setState((current) => ({
-      ...current,
-      deliveryType,
-      // Pickup has no address step, so a previously chosen address no longer applies.
-      addressId: deliveryType === 'pickup' ? null : current.addressId,
-    }));
-  }, []);
-
-  const setSchedule = useCallback((schedule: ScheduleChoice) => {
-    setState((current) => ({ ...current, schedule }));
-  }, []);
-
   const setAddressId = useCallback((addressId: string) => {
     setState((current) => ({ ...current, addressId }));
   }, []);
 
-  const setTipPercent = useCallback((tipPercent: number) => {
-    setState((current) => ({ ...current, tipPercent }));
+  const setInstructions = useCallback((instructions: string) => {
+    setState((current) => ({ ...current, instructions }));
   }, []);
 
-  const setNotes = useCallback((notes: string) => {
-    setState((current) => ({ ...current, notes }));
+  const setPhone = useCallback((phone: string) => {
+    setState((current) => ({ ...current, phone }));
   }, []);
 
-  const applyCoupon = useCallback((code: string) => {
-    const normalized = code.trim().toUpperCase();
-    const isValid = normalized === VALID_COUPON.code;
-    if (isValid) {
-      setState((current) => ({ ...current, couponCode: normalized, discountPercent: VALID_COUPON.discountPercent }));
-    }
-    return isValid;
+  const setPaymentMethodId = useCallback((paymentMethodId: PaymentMethodId) => {
+    setState((current) => ({ ...current, paymentMethodId }));
   }, []);
 
-  const clearCoupon = useCallback(() => {
-    setState((current) => ({ ...current, couponCode: null, discountPercent: 0 }));
+  const setPromoCode = useCallback((promoCode: string | null) => {
+    setState((current) => ({ ...current, promoCode }));
   }, []);
 
-  const setPaymentMethod = useCallback((paymentMethod: PaymentMethodSelection) => {
-    setState((current) => ({ ...current, paymentMethod }));
+  const setOrder = useCallback((order: Order | null) => {
+    setState((current) => ({ ...current, order }));
   }, []);
 
   const reset = useCallback(() => setState(INITIAL_STATE), []);
@@ -92,26 +78,22 @@ export function CheckoutFlowProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CheckoutFlowContextValue>(
     () => ({
       ...state,
-      setDeliveryType,
-      setSchedule,
       setAddressId,
-      setTipPercent,
-      setNotes,
-      applyCoupon,
-      clearCoupon,
-      setPaymentMethod,
+      setInstructions,
+      setPhone,
+      setPaymentMethodId,
+      setPromoCode,
+      setOrder,
       reset,
     }),
     [
       state,
-      setDeliveryType,
-      setSchedule,
       setAddressId,
-      setTipPercent,
-      setNotes,
-      applyCoupon,
-      clearCoupon,
-      setPaymentMethod,
+      setInstructions,
+      setPhone,
+      setPaymentMethodId,
+      setPromoCode,
+      setOrder,
       reset,
     ]
   );

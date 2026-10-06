@@ -51,7 +51,15 @@ describe('useCart', () => {
     const { result } = renderHook(() => useCart(), { wrapper });
     act(() => result.current.addItem(fries));
     expect(result.current.items).toEqual([
-      { lineId: expect.any(String), item: fries, quantity: 1, selections: [], notes: undefined, unitPrice: 1200 },
+      {
+        lineId: expect.any(String),
+        item: fries,
+        quantity: 1,
+        selections: [],
+        notes: undefined,
+        unitPrice: 1200,
+        availability: 'available',
+      },
     ]);
     expect(result.current.count).toBe(1);
     expect(result.current.subtotal).toBe(1200);
@@ -87,8 +95,16 @@ describe('useCart', () => {
 
   it('treats differently-customized lines of the same item as separate cart lines', () => {
     const { result } = renderHook(() => useCart(), { wrapper });
-    act(() => result.current.addItem(burger, { selections: [{ groupId: 'pao', optionIds: ['pao-tradicional'] }] }));
-    act(() => result.current.addItem(burger, { selections: [{ groupId: 'pao', optionIds: ['pao-brioche'] }] }));
+    act(() =>
+      result.current.addItem(burger, {
+        selections: [{ groupId: 'pao', optionIds: ['pao-tradicional'] }],
+      })
+    );
+    act(() =>
+      result.current.addItem(burger, {
+        selections: [{ groupId: 'pao', optionIds: ['pao-brioche'] }],
+      })
+    );
     expect(result.current.items).toHaveLength(2);
     expect(result.current.count).toBe(2);
   });
@@ -142,18 +158,128 @@ describe('useCart', () => {
     const burgerLineId = result.current.items.find((entry) => entry.item.id === burger.id)!.lineId;
     act(() => result.current.decrementItem(burgerLineId));
     expect(result.current.items).toEqual([
-      { lineId: expect.any(String), item: fries, quantity: 1, selections: [], notes: undefined, unitPrice: 1200 },
+      {
+        lineId: expect.any(String),
+        item: fries,
+        quantity: 1,
+        selections: [],
+        notes: undefined,
+        unitPrice: 1200,
+        availability: 'available',
+      },
     ]);
     expect(result.current.restaurantId).toBe('r1');
   });
 
-  it('adding an item from a different restaurant replaces the cart', () => {
+  /**
+   * Board 15, `one-cart-one-merchant`. Review focus 6: the add is held as a
+   * question and the first cart is left exactly as it was until it is answered.
+   */
+  it('raises a conflict instead of silently replacing another merchant cart', () => {
     const { result } = renderHook(() => useCart(), { wrapper });
     act(() => result.current.addItem(fries));
     act(() => result.current.addItem(sushi));
+
+    expect(result.current.conflict).toMatchObject({ currentMerchantId: 'r1', item: sushi });
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].item).toEqual(fries);
+    expect(result.current.restaurantId).toBe('r1');
+  });
+
+  it('keeping the current merchant drops the add and leaves the cart untouched', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => result.current.addItem(fries));
+    act(() => result.current.addItem(sushi));
+    act(() => result.current.resolveConflict('keep'));
+
+    expect(result.current.conflict).toBeNull();
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].item).toEqual(fries);
+  });
+
+  it('replacing swaps the cart for the new merchant', () => {
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => result.current.addItem(fries));
+    act(() => result.current.addItem(sushi));
+    act(() => result.current.resolveConflict('replace'));
+
+    expect(result.current.conflict).toBeNull();
     expect(result.current.items).toHaveLength(1);
     expect(result.current.items[0].item).toEqual(sushi);
     expect(result.current.restaurantId).toBe('r2');
+  });
+
+  describe('availability, quantity and removal', () => {
+    it('starts every line available', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+      act(() => result.current.addItem(fries));
+      expect(result.current.items[0].availability).toBe('available');
+    });
+
+    /**
+     * Board 05 E. The line stays on screen with its price; only the subtotal
+     * changes. Removing it from the list would leave the customer unable to
+     * tell what the total used to include.
+     */
+    it('keeps an unavailable line visible but out of the subtotal', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+      act(() => result.current.addItem(burger));
+      act(() => result.current.addItem(fries));
+      const friesLine = result.current.items.find((entry) => entry.item.id === fries.id)!;
+      act(() => result.current.setUnavailable([friesLine.lineId]));
+
+      expect(result.current.items).toHaveLength(2);
+      expect(result.current.subtotal).toBe(burger.price);
+      expect(
+        result.current.items.find((entry) => entry.lineId === friesLine.lineId)?.availability
+      ).toBe('unavailable');
+    });
+
+    it('restores a line the next check finds available again', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+      act(() => result.current.addItem(fries));
+      const lineId = result.current.items[0].lineId;
+      act(() => result.current.setUnavailable([lineId]));
+      act(() => result.current.setUnavailable([]));
+
+      expect(result.current.items[0].availability).toBe('available');
+      expect(result.current.subtotal).toBe(fries.price);
+    });
+
+    it('setQuantity writes the quantity the stepper landed on', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+      act(() => result.current.addItem(fries));
+      act(() => result.current.setQuantity(result.current.items[0].lineId, 4));
+
+      expect(result.current.items[0].quantity).toBe(4);
+      expect(result.current.subtotal).toBe(fries.price * 4);
+    });
+
+    /** The stepper's trash icon is `setQuantity(..., 0)` — board 03. */
+    it('setQuantity to zero removes the line', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+      act(() => result.current.addItem(fries));
+      act(() => result.current.setQuantity(result.current.items[0].lineId, 0));
+
+      expect(result.current.items).toEqual([]);
+      expect(result.current.restaurantId).toBeNull();
+    });
+
+    it('removeItem drops the whole line regardless of its quantity', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+      act(() => result.current.addItem(fries));
+      act(() => result.current.setQuantity(result.current.items[0].lineId, 3));
+      act(() => result.current.removeItem(result.current.items[0].lineId));
+
+      expect(result.current.items).toEqual([]);
+    });
+
+    it('ignores a quantity change on a line that is already gone', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+      act(() => result.current.addItem(fries));
+      act(() => result.current.setQuantity('does-not-exist', 5));
+      expect(result.current.items).toHaveLength(1);
+    });
   });
 
   it('clearCart empties the cart', () => {
@@ -217,7 +343,7 @@ describe('useCart with a caller-supplied unit price', () => {
     expect(result.current.count).toBe(2);
     expect(result.current.subtotal).toBe(10777);
   });
-})
+});
 
 /**
  * Editing a configuration from the cart. The board offers "Editar" on each

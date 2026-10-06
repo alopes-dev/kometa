@@ -2,107 +2,92 @@ import type { ReactNode } from 'react';
 import { renderHook, act } from '@testing-library/react-native';
 import { CheckoutFlowProvider } from './CheckoutFlowProvider';
 import { useCheckoutFlow } from './useCheckoutFlow';
+import type { Order } from '@/features/checkout/types';
 
 function wrapper({ children }: { children: ReactNode }) {
   return <CheckoutFlowProvider>{children}</CheckoutFlowProvider>;
 }
 
+const order: Order = {
+  orderId: '#CM-2048',
+  status: 'confirmed',
+  totals: { subtotal: 12700, delivery: 1200, deliveryMode: 'normal', discount: 1500, total: 12400 },
+  createdAt: 1700000000000,
+};
+
 describe('useCheckoutFlow', () => {
-  it('starts with no selections', () => {
+  it('starts with nothing collected', () => {
     const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    expect(result.current.deliveryType).toBeNull();
-    expect(result.current.schedule).toBeNull();
-    expect(result.current.addressId).toBeNull();
-    expect(result.current.tipPercent).toBe(0);
-    expect(result.current.couponCode).toBeNull();
-    expect(result.current.discountPercent).toBe(0);
-    expect(result.current.notes).toBe('');
-    expect(result.current.paymentMethod).toBeNull();
+    expect(result.current).toMatchObject({
+      addressId: null,
+      instructions: '',
+      phone: '',
+      paymentMethodId: null,
+      promoCode: null,
+      order: null,
+    });
   });
 
-  it('setDeliveryType stores the choice', () => {
+  it('stores each decision the path collects', () => {
     const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    act(() => result.current.setDeliveryType('pickup'));
-    expect(result.current.deliveryType).toBe('pickup');
-  });
-
-  it('switching to pickup clears a previously selected address', () => {
-    const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    act(() => result.current.setDeliveryType('delivery'));
     act(() => result.current.setAddressId('home'));
-    expect(result.current.addressId).toBe('home');
-    act(() => result.current.setDeliveryType('pickup'));
-    expect(result.current.addressId).toBeNull();
-  });
+    act(() => result.current.setInstructions('Ligar ao chegar.'));
+    act(() => result.current.setPhone('+244 923 456 789'));
+    act(() => result.current.setPaymentMethodId('cash'));
+    act(() => result.current.setPromoCode('COMETA1500'));
 
-  it('setSchedule stores the choice', () => {
-    const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    act(() => result.current.setSchedule({ type: 'scheduled', slotId: 'today-1930', label: 'Hoje — 19:30' }));
-    expect(result.current.schedule).toEqual({ type: 'scheduled', slotId: 'today-1930', label: 'Hoje — 19:30' });
-  });
-
-  it('setTipPercent stores the value', () => {
-    const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    act(() => result.current.setTipPercent(15));
-    expect(result.current.tipPercent).toBe(15);
-  });
-
-  it('applyCoupon accepts the valid code case-insensitively and sets the discount', () => {
-    const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    let success = false;
-    act(() => {
-      success = result.current.applyCoupon('kometa10');
+    expect(result.current).toMatchObject({
+      addressId: 'home',
+      instructions: 'Ligar ao chegar.',
+      phone: '+244 923 456 789',
+      paymentMethodId: 'cash',
+      promoCode: 'COMETA1500',
     });
-    expect(success).toBe(true);
-    expect(result.current.couponCode).toBe('KOMETA10');
-    expect(result.current.discountPercent).toBe(10);
   });
 
-  it('applyCoupon rejects an invalid code and leaves state unchanged', () => {
+  /**
+   * Board 13, "Voltar sem perder dados": revisiting a step must not clear the
+   * ones after it. Choosing a second address keeps the instructions written
+   * for the first, because they are the customer's words, not the address's.
+   */
+  it('keeps every other field when one is revised', () => {
     const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    let success = true;
-    act(() => {
-      success = result.current.applyCoupon('NOTVALID');
-    });
-    expect(success).toBe(false);
-    expect(result.current.couponCode).toBeNull();
-    expect(result.current.discountPercent).toBe(0);
+    act(() => result.current.setInstructions('Portão castanho.'));
+    act(() => result.current.setPaymentMethodId('card'));
+    act(() => result.current.setAddressId('work'));
+
+    expect(result.current.instructions).toBe('Portão castanho.');
+    expect(result.current.paymentMethodId).toBe('card');
   });
 
-  it('clearCoupon resets the coupon fields', () => {
+  it('carries the order once one exists', () => {
     const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    act(() => result.current.applyCoupon('KOMETA10'));
-    act(() => result.current.clearCoupon());
-    expect(result.current.couponCode).toBeNull();
-    expect(result.current.discountPercent).toBe(0);
+    act(() => result.current.setOrder(order));
+    expect(result.current.order).toEqual(order);
   });
 
-  it('setPaymentMethod stores the selection', () => {
+  it('clearing a promotion is distinct from never having had one', () => {
     const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    act(() => result.current.setPaymentMethod({ type: 'cash', detailsLabel: 'Dinheiro' }));
-    expect(result.current.paymentMethod).toEqual({ type: 'cash', detailsLabel: 'Dinheiro' });
+    act(() => result.current.setPromoCode('COMETA1500'));
+    act(() => result.current.setPromoCode(null));
+    expect(result.current.promoCode).toBeNull();
   });
 
-  it('reset restores the initial state', () => {
+  it('reset returns to the initial state', () => {
     const { result } = renderHook(() => useCheckoutFlow(), { wrapper });
-    act(() => {
-      result.current.setDeliveryType('delivery');
-      result.current.setTipPercent(20);
-      result.current.applyCoupon('KOMETA10');
-      result.current.setPaymentMethod({ type: 'cash', detailsLabel: 'Dinheiro' });
-    });
+    act(() => result.current.setAddressId('home'));
+    act(() => result.current.setPaymentMethodId('cash'));
+    act(() => result.current.setOrder(order));
     act(() => result.current.reset());
-    expect(result.current.deliveryType).toBeNull();
-    expect(result.current.tipPercent).toBe(0);
-    expect(result.current.discountPercent).toBe(0);
-    expect(result.current.paymentMethod).toBeNull();
+
+    expect(result.current).toMatchObject({ addressId: null, paymentMethodId: null, order: null });
   });
 
-  it('throws when used outside a CheckoutFlowProvider', () => {
-    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+  it('throws outside a provider', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => renderHook(() => useCheckoutFlow())).toThrow(
       'useCheckoutFlow must be used within a CheckoutFlowProvider'
     );
-    consoleError.mockRestore();
+    spy.mockRestore();
   });
 });

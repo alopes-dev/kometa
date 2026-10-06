@@ -4,10 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { OnboardingProvider } from './OnboardingProvider';
 import { useOnboarding } from './useOnboarding';
 
-jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
-);
-
 function wrapper({ children }: { children: ReactNode }) {
   return <OnboardingProvider>{children}</OnboardingProvider>;
 }
@@ -45,9 +41,7 @@ describe('useOnboarding', () => {
 
   it('handles AsyncStorage.getItem failure gracefully', async () => {
     // Mock getItem to reject
-    (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(
-      new Error('Storage unavailable')
-    );
+    (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('Storage unavailable'));
 
     const { result } = renderHook(() => useOnboarding(), { wrapper });
     expect(result.current.isLoading).toBe(true);
@@ -62,9 +56,7 @@ describe('useOnboarding', () => {
     const { result } = renderHook(() => useOnboarding(), { wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(
-      new Error('Storage unavailable')
-    );
+    (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('Storage unavailable'));
 
     await act(async () => {
       await result.current.completeOnboarding();
