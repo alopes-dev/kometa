@@ -14,8 +14,14 @@
 import { icon as onboardingIcon } from '@/features/onboarding/assets';
 
 export const brand = {
-  /** 18 x 18, white — the glyph inside the comet mark (node 74:27013). */
-  sparkles: require('../../../assets/auth/brand/sparkles.svg'),
+  /**
+   * The Kometa mark in white, for the plate in the welcome lockup.
+   *
+   * The board drew a stand-in sparkles glyph at node 74:27013 because the
+   * logo did not exist yet; this is the real mark, derived from the same
+   * source as the app icon so the two read as one lockup.
+   */
+  kometaMark: require('../../../assets/auth/brand/kometa-mark.png'),
   /** 180 x 180 — the upper-right ambient circle (node 74:24629). */
   ambientCircleLarge: require('../../../assets/auth/brand/ambient-circle-lg.svg'),
   /** 150 x 150 — the lower-left ambient circle (node 74:24630). */

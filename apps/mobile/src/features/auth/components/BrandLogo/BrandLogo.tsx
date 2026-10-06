@@ -11,7 +11,7 @@ const Row = styled.View`
   gap: ${({ theme }) => theme.auth.metrics.logoGap}px;
 `;
 
-/** `Comet mark` — node 74:24625. */
+/** `Comet mark` — node 74:24625. The plate the Kometa mark sits on. */
 const Mark = styled.View`
   align-items: center;
   justify-content: center;
@@ -40,7 +40,7 @@ export function BrandLogo() {
   return (
     <Row accessible accessibilityRole="image" accessibilityLabel={welcome.wordmark}>
       <Mark>
-        <OnboardingIcon source={brand.sparkles} size={theme.auth.metrics.markIconSize} />
+        <OnboardingIcon source={brand.kometaMark} size={theme.auth.metrics.markLogoWidth} />
       </Mark>
       <Wordmark>{welcome.wordmark}</Wordmark>
     </Row>

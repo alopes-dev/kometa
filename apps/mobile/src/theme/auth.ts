@@ -92,7 +92,13 @@ const metrics = {
   /** `Cometa logo` — node 74:24624. */
   markSize: 34,
   markRadius: 11,
-  markIconSize: 18,
+  /**
+   * The mark's slot inside the plate. The board drew a square 18px glyph;
+   * the real mark is 1.69:1, so this is 74% of `markSize` — the same share
+   * of the plate the mark takes in the app icon, which keeps the header
+   * lockup and the launcher icon reading as the same thing.
+   */
+  markLogoWidth: 25,
   logoGap: 10,
 
   /** `Welcome visual` — node 74:24628. */

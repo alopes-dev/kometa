@@ -11,7 +11,11 @@
 
 /** Node 74:24614 — the first screen behind the splash. */
 export const welcome = {
-  wordmark: 'COMETA',
+  /**
+   * The board draws this as "COMETA"; the app is Kometa everywhere else,
+   * app config included, so the name wins over the transcription here.
+   */
+  wordmark: 'Kometa',
   /** Node 74:24639. */
   title: 'Tudo o que precisas, num só lugar.',
   /** Node 74:24640. */

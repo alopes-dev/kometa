@@ -4,6 +4,7 @@ module.exports = {
     slug: "kometa",
     owner: "anthony.lopez",
     version: "1.0.0",
+    icon: "./assets/icon.png",
     orientation: "portrait",
     userInterfaceStyle: "light",
     scheme: "kometa",
@@ -14,16 +15,35 @@ module.exports = {
     android: {
       package: "so.sof.kometa",
       adaptiveIcon: {
-        backgroundColor: "#FFFFFF",
+        foregroundImage: "./assets/android-icon-foreground.png",
+        monochromeImage: "./assets/android-icon-monochrome.png",
+        // The source logo is the bare mark, so the plate it sits on is a
+        // colour rather than an image: the launcher's mask then crops clean
+        // brand green at any shape.
+        backgroundColor: "#0FA854",
       },
     },
     web: {
       bundler: "metro",
+      favicon: "./assets/favicon.png",
     },
     plugins: [
       "expo-router",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          image: "./assets/splash-icon.png",
+          // The image is the white mark on transparency and the background is
+          // the icon's own green, so the launcher icon appears to open into
+          // the splash rather than cutting to a different screen.
+          backgroundColor: "#0FA854",
+          // The canvas is padded for the circular mask Android 12+ applies, so
+          // this is wider than the mark: it renders at roughly half of it.
+          imageWidth: 288,
+          resizeMode: "contain",
+        },
+      ],
       "expo-image",
       "expo-dev-client",
       [
