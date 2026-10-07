@@ -63,10 +63,6 @@ export default function HomeLayout() {
           placed there is nothing behind them to go back to, so they replace
           rather than stack (see the `router.replace` calls at each hand-off).
         */}
-        <Stack.Screen name="order-tracking" />
-        <Stack.Screen name="live-tracking" />
-        <Stack.Screen name="delivered" />
-        <Stack.Screen name="rating" />
 
         <Stack.Screen name="restaurants" />
         <Stack.Screen name="offers" />

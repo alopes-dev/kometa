@@ -1,12 +1,5 @@
 import { activeOrderPhoto, dishPhoto, promotionPhoto, restaurantPhoto } from './assets';
-import type {
-  ActiveOrder,
-  HomeCategory,
-  MenuItem,
-  Offer,
-  Promotion,
-  Restaurant,
-} from './types';
+import type { HomeCategory, MenuItem, Offer, Promotion, Restaurant } from './types';
 
 /**
  * The catalogue, written to the Home board's content (frame 48:19762).
@@ -487,23 +480,6 @@ export const mockOffers: Offer[] = [
     subtitle: 'Só esta semana no Kinaxixe',
   },
 ];
-
-/**
- * The order the board draws in flight at the top of Home (node 48:19785).
- *
- * Four steps, three done: the segmented bar is the one place Home shows
- * progress, so the stage count lives with the data rather than being
- * hardcoded into the bar.
- */
-export const mockActiveOrder: ActiveOrder = {
-  id: 'o-active-1',
-  restaurantName: 'Burger House',
-  imageUrl: activeOrderPhoto,
-  statusLabel: 'A caminho',
-  etaLabel: '25–30 min',
-  completedSteps: 3,
-  totalSteps: 4,
-};
 
 /** The two merchandised banners (nodes 48:19819 and 48:19885). */
 export const mockPromotions: Promotion[] = [

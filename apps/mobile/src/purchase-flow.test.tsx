@@ -127,36 +127,38 @@ const SCREENS: {
   { name: 'order review', load: () => require('./app/(tabs)/(home)/checkout/review') },
   { name: 'checkout status', load: () => require('./app/(tabs)/(home)/checkout/status') },
   {
+    name: 'order confirmation',
+    params: { orderId: 'CM-10482' },
+    load: () => require('./app/(tabs)/(orders)/[orderId]/confirmation'),
+  },
+  {
+    name: 'order details',
+    params: { orderId: 'CM-10482' },
+    load: () => require('./app/(tabs)/(orders)/[orderId]/index'),
+  },
+  {
     name: 'order tracking',
-    params: {
-      restaurantId: 'r4',
-      itemCount: '2',
-      total: '7800',
-      deliverySummary: 'Entrega · Agora',
-      paymentSummary: 'Multicaixa Express',
-    },
-    load: () => require('./app/(tabs)/(home)/order-tracking'),
+    params: { orderId: 'CM-10482' },
+    load: () => require('./app/(tabs)/(orders)/[orderId]/tracking'),
   },
   {
-    name: 'live tracking',
-    params: {
-      restaurantId: 'r4',
-      itemCount: '2',
-      total: '7800',
-      deliverySummary: 'Entrega · Agora',
-      paymentSummary: 'Multicaixa Express',
-    },
-    load: () => require('./app/(tabs)/(home)/live-tracking'),
+    name: 'order timeline',
+    params: { orderId: 'CM-10482' },
+    load: () => require('./app/(tabs)/(orders)/[orderId]/timeline'),
   },
   {
-    name: 'delivered',
-    params: { restaurantId: 'r4', itemCount: '2', total: '7800' },
-    load: () => require('./app/(tabs)/(home)/delivered'),
+    name: 'order delivered',
+    params: { orderId: 'CM-10482' },
+    load: () => require('./app/(tabs)/(orders)/[orderId]/delivered'),
   },
   {
-    name: 'rating',
-    params: { restaurantId: 'r4' },
-    load: () => require('./app/(tabs)/(home)/rating'),
+    name: 'order rating',
+    params: { orderId: 'CM-10482' },
+    load: () => require('./app/(tabs)/(orders)/[orderId]/rating'),
+  },
+  {
+    name: 'orders list',
+    load: () => require('./app/(tabs)/(orders)/index'),
   },
 ];
 

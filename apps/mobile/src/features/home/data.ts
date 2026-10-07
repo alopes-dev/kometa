@@ -1,5 +1,4 @@
 import {
-  mockActiveOrder,
   mockHomeCategories,
   mockLastOrder,
   mockMenuItems,
@@ -7,14 +6,7 @@ import {
   mockPromotions,
   mockRestaurants,
 } from './mockData';
-import type {
-  ActiveOrder,
-  HomeCategory,
-  MenuItem,
-  Offer,
-  Promotion,
-  Restaurant,
-} from './types';
+import type { HomeCategory, MenuItem, Offer, Promotion, Restaurant } from './types';
 
 export function getRestaurants(): Restaurant[] {
   return mockRestaurants;
@@ -36,7 +28,9 @@ export function searchMenuItems(query: string): MenuItem[] {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return [];
   return mockMenuItems.filter(
-    (item) => item.name.toLowerCase().includes(normalized) || item.category.toLowerCase().includes(normalized)
+    (item) =>
+      item.name.toLowerCase().includes(normalized) ||
+      item.category.toLowerCase().includes(normalized)
   );
 }
 
@@ -49,10 +43,6 @@ export function getOffers(): Offer[] {
 }
 
 /** The order in flight, or `null` when the customer has none. */
-export function getActiveOrder(): ActiveOrder | null {
-  return mockActiveOrder;
-}
-
 export function getHomeCategories(): HomeCategory[] {
   return mockHomeCategories;
 }

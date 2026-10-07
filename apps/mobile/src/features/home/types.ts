@@ -69,19 +69,6 @@ export type Offer = {
 };
 
 /** An order still in flight, surfaced at the top of Home (node 48:19785). */
-export type ActiveOrder = {
-  id: string;
-  restaurantName: string;
-  imageUrl: ImageRef;
-  /** "A caminho" — the stage, already localised. */
-  statusLabel: string;
-  /** "25–30 min" — the remaining window. */
-  etaLabel: string;
-  /** How many of `totalSteps` are done; drives the segmented progress bar. */
-  completedSteps: number;
-  totalSteps: number;
-};
-
 /**
  * A merchandised banner (nodes 48:19819, 48:19885).
  *

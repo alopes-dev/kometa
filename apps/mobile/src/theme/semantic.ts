@@ -100,7 +100,8 @@ const lightColors = {
   },
 
   /**
-   * Delivery lifecycle. The keys mirror `TRACKING_STAGES` in the tracking
+   * Delivery lifecycle, for the design system's `StatusChip`. The orders
+   * path keys its own chip off `OrderStage` in the orders
    * feature exactly, so a stage can be looked up directly without a mapping
    * table that can fall out of sync.
    *
@@ -149,11 +150,13 @@ const lightColors = {
 
 /** The token vocabulary. Dark must satisfy this exactly — no missing keys. */
 export type SemanticColors = {
-  readonly [K in keyof typeof lightColors]: typeof lightColors[K] extends string
+  readonly [K in keyof typeof lightColors]: (typeof lightColors)[K] extends string
     ? string
-    : { readonly [P in keyof typeof lightColors[K]]: typeof lightColors[K][P] extends string
-        ? string
-        : { readonly [Q in keyof typeof lightColors[K][P]]: string } };
+    : {
+        readonly [P in keyof (typeof lightColors)[K]]: (typeof lightColors)[K][P] extends string
+          ? string
+          : { readonly [Q in keyof (typeof lightColors)[K][P]]: string };
+      };
 };
 
 /**
