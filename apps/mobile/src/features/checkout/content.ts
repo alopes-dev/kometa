@@ -179,14 +179,20 @@ export const content = {
   replaceCartAction: 'Substituir',
 
   // ─── Confirmation (board 17) ─────────────────────────────────────────────
-  pendingHeadline: 'Estamos a confirmar',
-  pendingBody: 'Não tentes pagar novamente. Atualizaremos este ecrã assim que houver resposta.',
+  pendingHeadline: 'Pagamento pendente',
+  /** Board 15 of page 69:4724 names what the delay is holding up. */
+  pendingBody: (merchant: string) =>
+    `Conclui o pagamento para a ${merchant} começar a preparar o pedido.`,
+  completePayment: 'Concluir pagamento',
+  cancelOrder: 'Cancelar pedido',
   pendingSafeTitle: 'Podes sair em segurança',
   pendingSafeBody: 'Enviaremos uma atualização quando o estado mudar.',
   orderRow: 'Pedido',
 
-  failedHeadline: 'Não foi possível pagar',
-  failedBody: 'Não debitámos o valor. Tenta novamente ou escolhe outro método.',
+  failedHeadline: 'O pagamento não foi concluído',
+  /** Board 15: the first fact a refused payment must state is that nothing was charged. */
+  failedBody: 'Não cobrámos o teu cartão. Tenta novamente ou escolhe outro método.',
+  changeMethod: 'Alterar método',
   failedMethodSubtitle: 'Método usado nesta tentativa',
   changePaymentMethod: 'Alterar método de pagamento',
   dataKeptTitle: 'Os teus dados estão guardados',

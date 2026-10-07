@@ -20,6 +20,7 @@ import { CheckoutAction } from '../CheckoutAction';
 import { FeedbackBanner } from '../FeedbackBanner';
 import { ScreenHeader } from '../ScreenHeader';
 import { SelectionRow } from '../SelectionRow';
+import { PaymentStateScreen } from '../PaymentStateScreen';
 import { StateScreen } from '../StateScreen';
 
 const Screen = styled.View`
@@ -203,60 +204,16 @@ export function StatusScreen() {
     );
   }
 
-  if (order.status === 'pending') {
+  if (order.status === 'pending' || order.status === 'failed') {
     return (
-      <Screen>
-        <ScreenHeader title={content.pendingTitle} caption={content.pendingCaption} />
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <StateScreen tone="pending" title={content.pendingHeadline} body={content.pendingBody} />
-          <Body>
-            <SelectionRow
-              icon={{ name: 'receipt-outline', sf: 'doc.text' }}
-              title={content.orderRow}
-              subtitle={content.orderReference(order.orderId, order.totals.total)}
-            />
-            <FeedbackBanner
-              tone="info"
-              title={content.pendingSafeTitle}
-              body={content.pendingSafeBody}
-            />
-          </Body>
-        </ScrollView>
-      </Screen>
-    );
-  }
-
-  if (order.status === 'failed') {
-    return (
-      <Screen>
-        <ScreenHeader title={content.failedTitle} caption={content.failedCaption} />
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <StateScreen tone="error" title={content.failedHeadline} body={content.failedBody} />
-          <Body>
-            {method ? (
-              <SelectionRow
-                icon={method.icon}
-                title={method.label}
-                subtitle={content.failedMethodSubtitle}
-              />
-            ) : null}
-            <SelectionRow
-              icon={{ name: 'swap-horizontal-outline', sf: 'arrow.left.arrow.right' }}
-              title={content.changePaymentMethod}
-              onPress={() => router.replace('/checkout/payment')}
-            />
-            <FeedbackBanner
-              tone="success"
-              title={content.dataKeptTitle}
-              body={content.dataKeptBody}
-            />
-          </Body>
-        </ScrollView>
-        <CheckoutAction
-          contract={{ label: content.retry, tone: 'destructive', enabled: true }}
-          onPress={retry}
-        />
-      </Screen>
+      <PaymentStateScreen
+        state={order.status}
+        merchantName={merchant?.name ?? ''}
+        orderId={order.orderId}
+        total={order.totals.total}
+        onPrimary={order.status === 'failed' ? retry : retry}
+        onSecondary={() => router.replace('/checkout/payment')}
+      />
     );
   }
 

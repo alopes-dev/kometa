@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import styled from 'styled-components/native';
 import { ordersTextStyle } from '@/theme';
@@ -48,6 +49,19 @@ const Eta = styled.Text`
   color: ${({ theme }) => theme.colors.brand.base};
 `;
 
+/** How often the screen re-asks whether its snapshot has aged. */
+const STALE_TICK_MS = 10_000;
+
+/** A clock value that moves, so staleness is evaluated against now, not mount. */
+function useTicking(intervalMs: number): number {
+  const [value, setValue] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setValue(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return value;
+}
+
 const Freshness = styled.Text`
   ${ordersTextStyle('caption')}
   color: ${({ theme }) => theme.colors.text.muted};
@@ -78,11 +92,18 @@ export function TrackingScreen({
   onCall,
   delay,
   locationDenied,
-  now = Date.now(),
+  now,
 }: TrackingScreenProps) {
+  // Freshness is a question about *this moment*, so it needs a value that
+  // moves. Reading the clock during render would both be impure and freeze
+  // staleness at mount — a screen left open would never admit it had gone
+  // stale, which is the one thing board 13 asks it to do.
+  const ticking = useTicking(STALE_TICK_MS);
+  const moment = now ?? ticking;
+
   if (order.stage === null) return null;
 
-  const stale = isSnapshotStale(order, now);
+  const stale = isSnapshotStale(order, moment);
   const band = etaBand(order.stage);
   const delivered = order.events.find((event) => event.stage === 'delivered')?.occurredAt;
 
