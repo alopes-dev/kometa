@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/components/design-system/ThemeProvider';
 import { CartProvider } from '@/hooks/CartProvider';
 import { CheckoutFlowProvider } from '@/hooks/CheckoutFlowProvider';
+import { OrdersProvider } from '@/hooks/OrdersProvider';
 import { TabBarVisibilityProvider } from '@/hooks/TabBarVisibilityProvider';
 
 /**
@@ -70,7 +71,9 @@ function Providers({ children }: { children: ReactNode }) {
       <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
         <TabBarVisibilityProvider>
           <CartProvider>
-            <CheckoutFlowProvider>{children}</CheckoutFlowProvider>
+            <CheckoutFlowProvider>
+              <OrdersProvider>{children}</OrdersProvider>
+            </CheckoutFlowProvider>
           </CartProvider>
         </TabBarVisibilityProvider>
       </SafeAreaProvider>
@@ -93,18 +96,33 @@ function setParams(next: Record<string, string>) {
  * two items carrying modifier groups, so the product screen renders its
  * selector rather than the plain variant.
  */
-const SCREENS: { name: string; params?: Record<string, string>; load: () => { default: React.ComponentType } }[] = [
+const SCREENS: {
+  name: string;
+  params?: Record<string, string>;
+  load: () => { default: React.ComponentType };
+}[] = [
   { name: 'home', load: () => require('./app/(tabs)/(home)/index') },
   { name: 'restaurants', load: () => require('./app/(tabs)/(home)/restaurants') },
   { name: 'offers', load: () => require('./app/(tabs)/(home)/offers') },
   { name: 'notifications', load: () => require('./app/(tabs)/(home)/notifications') },
-  { name: 'restaurant detail', params: { id: 'r4' }, load: () => require('./app/(tabs)/(home)/restaurant/[id]') },
-  { name: 'product detail', params: { itemId: 'r4-1' }, load: () => require('./app/(tabs)/(home)/product/[itemId]') },
+  {
+    name: 'restaurant detail',
+    params: { id: 'r4' },
+    load: () => require('./app/(tabs)/(home)/restaurant/[id]'),
+  },
+  {
+    name: 'product detail',
+    params: { itemId: 'r4-1' },
+    load: () => require('./app/(tabs)/(home)/product/[itemId]'),
+  },
   { name: 'cart', load: () => require('./app/(tabs)/(home)/cart/index') },
   { name: 'promotion', load: () => require('./app/(tabs)/(home)/cart/promo') },
   { name: 'delivery address', load: () => require('./app/(tabs)/(home)/checkout/address/index') },
   { name: 'new address', load: () => require('./app/(tabs)/(home)/checkout/address/new') },
-  { name: 'delivery instructions', load: () => require('./app/(tabs)/(home)/checkout/instructions') },
+  {
+    name: 'delivery instructions',
+    load: () => require('./app/(tabs)/(home)/checkout/instructions'),
+  },
   { name: 'payment', load: () => require('./app/(tabs)/(home)/checkout/payment') },
   { name: 'order review', load: () => require('./app/(tabs)/(home)/checkout/review') },
   { name: 'checkout status', load: () => require('./app/(tabs)/(home)/checkout/status') },
@@ -135,7 +153,11 @@ const SCREENS: { name: string; params?: Record<string, string>; load: () => { de
     params: { restaurantId: 'r4', itemCount: '2', total: '7800' },
     load: () => require('./app/(tabs)/(home)/delivered'),
   },
-  { name: 'rating', params: { restaurantId: 'r4' }, load: () => require('./app/(tabs)/(home)/rating') },
+  {
+    name: 'rating',
+    params: { restaurantId: 'r4' },
+    load: () => require('./app/(tabs)/(home)/rating'),
+  },
 ];
 
 describe('purchase path', () => {

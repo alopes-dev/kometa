@@ -6,7 +6,6 @@ import { useCart } from '@/hooks/useCart';
 import { spacing } from '@/theme';
 import { home } from '../../content';
 import {
-  getActiveOrder,
   getForYouRestaurants,
   getHomeCategories,
   getLastOrder,
@@ -16,7 +15,7 @@ import {
 } from '../../data';
 import { formatKwanza } from '../../format';
 import type { Restaurant } from '../../types';
-import { ActiveOrderCard } from '../ActiveOrderCard';
+import { ActiveOrderCard } from '@/features/orders/components/ActiveOrderCard';
 import { AssistantCard } from '../AssistantCard';
 import { CategoryTileList } from '../CategoryTileList';
 import { DiscoverHeader } from '../DiscoverHeader';
@@ -44,6 +43,13 @@ export type HomeScreenProps = {
   onPressRestaurant?: (id: string) => void;
   /** Opens tracking for the order in flight. */
   onPressActiveOrder?: () => void;
+  /**
+   * The order in flight, resolved by the route. Board 05 keeps this card on
+   * Home for as long as there is one; absent, the section is simply not drawn.
+   */
+  activeOrder?: import('@/features/orders/store').OrderRecord;
+  /** The merchant behind `activeOrder`, resolved by the route. */
+  activeOrderMerchant?: string;
   /** Opens the cart. */
   onPressCart?: () => void;
   /** Opens the notification centre. */
@@ -58,6 +64,8 @@ export function HomeScreen({
   onPressSearch = () => {},
   onPressRestaurant,
   onPressActiveOrder = () => {},
+  activeOrder,
+  activeOrderMerchant = '',
   onPressCart,
   onPressNotifications,
   onPressAllRestaurants,
@@ -70,7 +78,6 @@ export function HomeScreen({
   const [favoriteIds, setFavoriteIds] = useState<ReadonlySet<string>>(() => new Set());
 
   const categories = getHomeCategories();
-  const activeOrder = getActiveOrder();
   const [featuredPromotion, limitedPromotion] = getPromotions();
   const lastOrder = getLastOrder();
   const nearest = getNearestRestaurant();
@@ -83,7 +90,11 @@ export function HomeScreen({
     });
   }, []);
 
-  const renderCard = (restaurant: Restaurant, index: number, options?: { width?: number; footnote?: string }) => (
+  const renderCard = (
+    restaurant: Restaurant,
+    index: number,
+    options?: { width?: number; footnote?: string }
+  ) => (
     <RestaurantCard
       key={restaurant.id}
       restaurant={restaurant}
@@ -153,7 +164,11 @@ export function HomeScreen({
 
         {activeOrder ? (
           <Gutter>
-            <ActiveOrderCard order={activeOrder} onPress={onPressActiveOrder} />
+            <ActiveOrderCard
+              order={activeOrder}
+              merchantName={activeOrderMerchant}
+              onTrack={onPressActiveOrder}
+            />
           </Gutter>
         ) : null}
 
@@ -197,7 +212,11 @@ export function HomeScreen({
         {limitedPromotion ? (
           <Section>
             <Gutter>
-              <SectionHeader title={home.offers} actionLabel={home.seeAll} onPressAction={onPressOffers} />
+              <SectionHeader
+                title={home.offers}
+                actionLabel={home.seeAll}
+                onPressAction={onPressOffers}
+              />
             </Gutter>
             <Gutter>
               <PromoBanner promotion={limitedPromotion} />
