@@ -55,3 +55,17 @@ export type StageEta =
   | { kind: 'now' }
   | { kind: 'at-delivery' }
   | { kind: 'none' };
+
+/**
+ * A stage's ETA once it has met a clock — what a screen actually renders.
+ *
+ * The resolved twin of `StageEta`: `at-delivery` has become either a real
+ * `time` or `none`. Board 18's rule that an ETA is never a per-second
+ * countdown is why there is no `seconds` member and never will be.
+ */
+export type EtaBand =
+  | { kind: 'range'; min: number; max: number }
+  | { kind: 'approx'; minutes: number }
+  | { kind: 'now' }
+  | { kind: 'time'; at: number }
+  | { kind: 'none' };
