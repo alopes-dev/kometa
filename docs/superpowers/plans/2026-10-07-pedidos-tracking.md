@@ -1688,3 +1688,63 @@ Expected: no output.
 git add -A apps/mobile/src
 git commit -m "refactor(tracking): cut over to the Figma orders and tracking path"
 ```
+
+---
+
+## Decisions taken during implementation
+
+The plan was written before the code existed, and nineteen points needed a
+call. They are recorded here because a decision that lives only in a commit
+diff is one nobody can disagree with later.
+
+**Figma discrepancies**
+
+- **`arrived` is an eleventh stage.** Board 18's table has ten and steps from
+  `arriving` to `delivered`; board 07's list and flow C of board 17 both draw
+  _Courier chegou_. Two boards against one.
+- **#CM-10482 totals 11.100 Kz, not 12.400.** Boards 04, 05, 14 and 15 write
+  12.400; board 06 — the only board that shows the arithmetic — breaks the same
+  order down to 11.100. The board that adds up wins, and 12.400 is carried by a
+  second fixture so the figure still appears. **Worth confirming with the
+  designer.**
+- **The scheme stays `kometa`.** Board 18 writes `cometa://`; the boards name
+  the brand, and changing a published scheme breaks every issued link. A test
+  pins `cometa://` as rejected. **Also worth confirming.**
+
+**Architecture**
+
+- `OrderStatus` became `PaymentStatus`, and `checkoutState.ts`'s own duplicate
+  pair was collapsed — the feature briefly exported two different types under
+  one name.
+- The orders board gets its own `OrderStatusChip` rather than reusing the
+  design-system `StatusChip`: that atom is keyed to an eight-tone palette that
+  paints `preparing` amber and `delivered` green, which contradicts board 03's
+  three tones and cannot even express eleven stages.
+- The orders path gets its own `ScreenHeader`; the checkout one reads
+  `theme.checkout.metrics`, and crossing board tokens is what the scoped token
+  files exist to prevent.
+- Board 15's payment states were extracted into `PaymentStateScreen` rather
+  than edited inside `StatusScreen`, which has no test file.
+- Board 12's payload rules live in `features/orders/notifications.ts` rather
+  than being bolted onto the existing notification-centre module, which models
+  a different thing.
+- Board 04's confirmation **replaces** `StatusScreen`'s confirmed branch. Two
+  screens confirming one order is one too many.
+
+**Found by the final review, fixed**
+
+A paid order could be lost entirely if the customer backed out of the
+confirmation screen; `Cancelar pedido` opened the payment-method picker;
+tracking showed an empty ETA after delivery and never completed the flow; a
+transient storage read error overwrote real order history with fixtures; four
+routes had no caller; the deep links resolved to nothing because `(orders)` is
+a route group; receipts called cancelled orders "pago" and cancellations
+promised refunds that were never owed; the map fallback was inaudible to
+VoiceOver about a denied location.
+
+**Rejected**
+
+- The review called `Reembolsado` replacing the item count a defect. Board 05
+  draws that row exactly so; only the unconditional part was wrong.
+- Review Focus #4's test cannot fail, which is true and not fixed: the honest
+  fix is a refresh-failure surface that does not exist yet.
