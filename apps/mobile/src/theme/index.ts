@@ -18,6 +18,7 @@ export {
   boardTextStyle,
   productTextStyle,
   checkoutTextStyle,
+  ordersTextStyle,
   continuousCorners,
 } from './mixins';
 export { foregroundRoles, fillRoles, type ForegroundRole, type FillRole } from './roles';
@@ -26,3 +27,4 @@ export { auth, type AuthTokens } from './auth';
 export { business, type BusinessTokens, type BusinessTypeStep } from './business';
 export { product, type ProductTokens, type ProductTypeStep } from './product';
 export { checkout, type CheckoutTokens, type CheckoutTypeStep } from './checkout';
+export { orders, type OrdersTokens, type OrdersTypeStep } from './orders';

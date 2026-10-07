@@ -89,3 +89,19 @@ export const checkoutTextStyle = (step: import('./checkout').CheckoutTypeStep) =
     return 'lineHeight' in resolved ? `line-height: ${resolved.lineHeight}px;` : '';
   }}
 `;
+
+/**
+ * Applies a step from the orders board's type scale — see `theme/orders.ts`.
+ *
+ * A fourth twin of `boardTextStyle`, for the reason the second and third give:
+ * each accessor is bound to one board's scale, so `ordersTextStyle('eta')`
+ * cannot resolve against the checkout board by accident.
+ */
+export const ordersTextStyle = (step: import('./orders').OrdersTypeStep) => css`
+  font-family: ${({ theme }) => theme.orders.type[step].fontFamily};
+  font-size: ${({ theme }) => theme.orders.type[step].fontSize}px;
+  ${({ theme }) => {
+    const resolved = theme.orders.type[step];
+    return 'lineHeight' in resolved ? `line-height: ${resolved.lineHeight}px;` : '';
+  }}
+`;

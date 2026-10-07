@@ -18,6 +18,7 @@ import {
   business,
   product,
   checkout,
+  orders,
   type SemanticColors,
   type ShadowGeometry,
   type ShadowLevel,
@@ -28,6 +29,7 @@ import {
   type BusinessTokens,
   type ProductTokens,
   type CheckoutTokens,
+  type OrdersTokens,
 } from '@/theme';
 
 /**
@@ -85,6 +87,12 @@ export interface Theme {
    * likewise come from `colors` rather than being frozen here.
    */
   checkout: CheckoutTokens;
+  /**
+   * Figma orders-board tokens — everything after the payment confirms.
+   * Scheme-independent for the same reason as `checkout`, and its colours
+   * likewise come from `colors` rather than being frozen here.
+   */
+  orders: OrdersTokens;
 }
 
 const shared = {
@@ -94,6 +102,7 @@ const shared = {
   business,
   product,
   checkout,
+  orders,
   spacing,
   layout,
   radius,
