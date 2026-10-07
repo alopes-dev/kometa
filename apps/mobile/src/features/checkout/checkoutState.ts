@@ -1,4 +1,5 @@
 import { content } from './content';
+import type { PaymentStatus } from './types';
 
 /**
  * The state machine board 19 · 02 declares, and the CTA contract board 14
@@ -12,9 +13,9 @@ import { content } from './content';
 
 export type CartStatus = 'empty' | 'loading' | 'ready' | 'below-minimum' | 'invalid' | 'updating';
 export type DeliveryStatus = 'missing' | 'selected' | 'unavailable' | 'validating' | 'valid';
-export type PaymentStatus =
+/** The checkout flow's payment *step* — which control (method selection, etc.) the user is on. */
+export type PaymentStepStatus =
   'unselected' | 'selected' | 'unavailable' | 'processing' | 'failed' | 'success';
-export type OrderStatus = 'draft' | 'submitting' | 'pending' | 'confirmed' | 'failed' | 'cancelled';
 
 /** Which screen is asking. The same state reads differently on each. */
 export type CheckoutStep = 'cart' | 'delivery' | 'payment' | 'review';
@@ -23,8 +24,8 @@ export type CheckoutSnapshot = {
   step: CheckoutStep;
   cart: CartStatus;
   delivery: DeliveryStatus;
-  payment: PaymentStatus;
-  order: OrderStatus;
+  payment: PaymentStepStatus;
+  order: PaymentStatus;
   total: number;
   remainingToMinimum: number;
   /**
