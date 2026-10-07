@@ -16,7 +16,12 @@ export default function Orders() {
       active={active}
       history={history}
       merchantName={(merchantId) => getRestaurantById(merchantId)?.name ?? ''}
-      onTrack={() => router.push('/order-tracking')}
+      onTrack={(order) =>
+        router.push({
+          pathname: '/(tabs)/(orders)/[orderId]/tracking',
+          params: { orderId: order.orderId },
+        })
+      }
       onOpen={(order) =>
         router.push({ pathname: '/(tabs)/(orders)/[orderId]', params: { orderId: order.orderId } })
       }

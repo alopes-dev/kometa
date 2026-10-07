@@ -15,7 +15,12 @@ export default function Confirmation() {
     <ConfirmationScreen
       order={order}
       merchantName={getRestaurantById(order.merchantId)?.name ?? ''}
-      onTrack={() => router.replace('/order-tracking')}
+      onTrack={() =>
+        router.replace({
+          pathname: '/(tabs)/(orders)/[orderId]/tracking',
+          params: { orderId },
+        })
+      }
       onKeepExploring={() => router.replace('/')}
     />
   );

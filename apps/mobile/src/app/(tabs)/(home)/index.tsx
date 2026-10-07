@@ -19,7 +19,14 @@ export default function Home() {
       onPressRestaurant={(id) => router.push({ pathname: '/restaurant/[id]', params: { id } })}
       activeOrder={active}
       activeOrderMerchant={active ? (getRestaurantById(active.merchantId)?.name ?? '') : ''}
-      onPressActiveOrder={() => router.push('/order-tracking')}
+      onPressActiveOrder={() =>
+        active
+          ? router.push({
+              pathname: '/(tabs)/(orders)/[orderId]/tracking',
+              params: { orderId: active.orderId },
+            })
+          : undefined
+      }
       onPressCart={() => router.push('/cart')}
       onPressNotifications={() => router.push('/notifications')}
       onPressAllRestaurants={() => router.push('/restaurants')}
