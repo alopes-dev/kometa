@@ -28,4 +28,4 @@ minimumReleaseAgeExclude:
   - turbo@2.11.6
 
 allowBuilds:
-  unrs-resolver: set this to true or false
+  unrs-resolver: true
