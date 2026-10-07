@@ -69,3 +69,39 @@ export type EtaBand =
   | { kind: 'now' }
   | { kind: 'time'; at: number }
   | { kind: 'none' };
+
+// ─── The order record ──────────────────────────────────────────────────────
+
+/** A line as the order captured it — a snapshot, not a live catalogue read. */
+export type OrderLine = {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+export type OrderDelivery = {
+  /** `Casa` — what the customer named the address. */
+  addressLabel: string;
+  /** `Talatona` — the zone, which the courier reads. */
+  zone: string;
+  city: string;
+  /** `Ligar ao chegar. Portão cinzento.` — board 11 shows it only during delivery. */
+  instructions?: string;
+};
+
+export type Courier = {
+  name: string;
+  vehicle: string;
+  plate: string;
+  rating: number;
+  phone: string;
+};
+
+/** How the order was paid, as board 06's receipt shows it. */
+export type OrderPayment = {
+  /** `Visa` — the brand only. */
+  brand: string;
+  /** `2408` — board 15 allows the last four digits and nothing more. */
+  last4: string;
+};

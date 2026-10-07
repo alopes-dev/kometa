@@ -33,6 +33,7 @@ import { BrandSplash } from "@/features/onboarding";
 import { TabBarVisibilityProvider } from "@/hooks/TabBarVisibilityProvider";
 import { CartProvider } from "@/hooks/CartProvider";
 import { CheckoutFlowProvider } from "@/hooks/CheckoutFlowProvider";
+import { OrdersProvider } from "@/hooks/OrdersProvider";
 
 const Root = styled.View`
   flex: 1;
@@ -114,10 +115,12 @@ function Gate({ onReady }: { onReady: () => void }) {
       <TabBarVisibilityProvider>
         <CartProvider>
           <CheckoutFlowProvider>
-            <Navigation
-              hasSeenOnboarding={hasSeenOnboarding}
-              hasCompletedSetup={hasCompletedSetup}
-            />
+            <OrdersProvider>
+              <Navigation
+                hasSeenOnboarding={hasSeenOnboarding}
+                hasCompletedSetup={hasCompletedSetup}
+              />
+            </OrdersProvider>
           </CheckoutFlowProvider>
         </CartProvider>
       </TabBarVisibilityProvider>
