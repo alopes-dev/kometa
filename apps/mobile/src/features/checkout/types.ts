@@ -89,11 +89,21 @@ export type Promo = {
 
 // ─── Order ─────────────────────────────────────────────────────────────────
 
-export type OrderStatus = 'draft' | 'submitting' | 'pending' | 'confirmed' | 'failed' | 'cancelled';
+/**
+ * The payment lifecycle — what the provider says about this attempt.
+ *
+ * Deliberately NOT the order's operational lifecycle, which lives in
+ * `features/orders/types.ts` as `OrderStage`. The two share three names
+ * (`pending`, `confirmed`, `cancelled`) and mean different things by each:
+ * board 15 of page 69:4724 requires a pending *payment* to be
+ * distinguishable from a pending *kitchen*, and one union cannot say both.
+ */
+export type PaymentStatus =
+  'draft' | 'submitting' | 'pending' | 'confirmed' | 'failed' | 'cancelled';
 
 export type Order = {
   orderId: string;
-  status: OrderStatus;
+  status: PaymentStatus;
   totals: OrderSummary;
   createdAt: number;
   /** What the provider calls this attempt, so a pending payment can be polled. */
