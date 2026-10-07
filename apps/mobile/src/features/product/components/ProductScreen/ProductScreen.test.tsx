@@ -5,7 +5,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/components/design-system/ThemeProvider';
 import { CartProvider } from '@/hooks/CartProvider';
 import { useCart } from '@/hooks/useCart';
-import { TabBarVisibilityProvider } from '@/hooks/TabBarVisibilityProvider';
 import { ProductScreen } from './ProductScreen';
 import { createCartSubmitter, type CartSubmitter } from '../../cartSubmission';
 import { getProductById } from '../../data';
@@ -36,11 +35,9 @@ function renderScreen(productId: string, submit: CartSubmitter = createCartSubmi
       }}
     >
       <ThemeProvider>
-        <TabBarVisibilityProvider>
-          <CartProvider>
-            <ProductScreen productId={productId} submit={submit} />
-          </CartProvider>
-        </TabBarVisibilityProvider>
+        <CartProvider>
+          <ProductScreen productId={productId} submit={submit} />
+        </CartProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
@@ -332,12 +329,10 @@ describe('ProductScreen editing a configuration that is already in the cart', ()
         }}
       >
         <ThemeProvider>
-          <TabBarVisibilityProvider>
-            <CartProvider>
-              <Harness />
-              <CartProbe />
-            </CartProvider>
-          </TabBarVisibilityProvider>
+          <CartProvider>
+            <Harness />
+            <CartProbe />
+          </CartProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     );
@@ -382,15 +377,13 @@ describe('ProductScreen in its compact presentation', () => {
         }}
       >
         <ThemeProvider>
-          <TabBarVisibilityProvider>
-            <CartProvider>
-              <ProductScreen
-                productId="r4-4"
-                compact
-                submit={createCartSubmitter({ latencyMs: 0 })}
-              />
-            </CartProvider>
-          </TabBarVisibilityProvider>
+          <CartProvider>
+            <ProductScreen
+              productId="r4-4"
+              compact
+              submit={createCartSubmitter({ latencyMs: 0 })}
+            />
+          </CartProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     );
@@ -409,15 +402,13 @@ describe('ProductScreen in its compact presentation', () => {
         }}
       >
         <ThemeProvider>
-          <TabBarVisibilityProvider>
-            <CartProvider>
-              <ProductScreen
-                productId="r4-4"
-                compact
-                submit={createCartSubmitter({ latencyMs: 0 })}
-              />
-            </CartProvider>
-          </TabBarVisibilityProvider>
+          <CartProvider>
+            <ProductScreen
+              productId="r4-4"
+              compact
+              submit={createCartSubmitter({ latencyMs: 0 })}
+            />
+          </CartProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     );
@@ -435,15 +426,13 @@ describe('ProductScreen in its compact presentation', () => {
         }}
       >
         <ThemeProvider>
-          <TabBarVisibilityProvider>
-            <CartProvider>
-              <ProductScreen
-                productId="r4-4"
-                compact
-                submit={createCartSubmitter({ latencyMs: 0 })}
-              />
-            </CartProvider>
-          </TabBarVisibilityProvider>
+          <CartProvider>
+            <ProductScreen
+              productId="r4-4"
+              compact
+              submit={createCartSubmitter({ latencyMs: 0 })}
+            />
+          </CartProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     );

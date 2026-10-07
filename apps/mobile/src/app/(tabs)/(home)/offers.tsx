@@ -1,11 +1,9 @@
-import { useCallback } from 'react';
 import { FlatList, Pressable } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { Icon, Text } from '@/components/design-system/atoms';
 import { OfferCard } from '@/features/home/components/OfferCard';
-import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
 import { getOffers } from '@/features/home/data';
 import type { Offer } from '@/features/home/types';
 
@@ -33,15 +31,7 @@ const BackButton = styled.View`
 export default function Offers() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { setIsTabBarHidden } = useTabBarVisibility();
   const offers = getOffers();
-
-  useFocusEffect(
-    useCallback(() => {
-      setIsTabBarHidden(true);
-      return () => setIsTabBarHidden(false);
-    }, [setIsTabBarHidden])
-  );
 
   return (
     <Screen>

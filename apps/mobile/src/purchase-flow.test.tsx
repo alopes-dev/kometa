@@ -5,7 +5,6 @@ import { ThemeProvider } from '@/components/design-system/ThemeProvider';
 import { CartProvider } from '@/hooks/CartProvider';
 import { CheckoutFlowProvider } from '@/hooks/CheckoutFlowProvider';
 import { OrdersProvider } from '@/hooks/OrdersProvider';
-import { TabBarVisibilityProvider } from '@/hooks/TabBarVisibilityProvider';
 
 /**
  * Every screen on the purchase path mounts.
@@ -69,13 +68,11 @@ function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-        <TabBarVisibilityProvider>
-          <CartProvider>
-            <CheckoutFlowProvider>
-              <OrdersProvider>{children}</OrdersProvider>
-            </CheckoutFlowProvider>
-          </CartProvider>
-        </TabBarVisibilityProvider>
+        <CartProvider>
+          <CheckoutFlowProvider>
+            <OrdersProvider>{children}</OrdersProvider>
+          </CheckoutFlowProvider>
+        </CartProvider>
       </SafeAreaProvider>
     </ThemeProvider>
   );

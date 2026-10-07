@@ -1,10 +1,9 @@
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Pressable, SectionList } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { Icon, Text } from '@/components/design-system/atoms';
-import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
 import { NotificationRow } from '@/features/notifications/components/NotificationRow';
 import { mockNotifications } from '@/features/notifications/mockData';
 import { groupNotificationsBySection } from '@/features/notifications/selectors';
@@ -58,15 +57,7 @@ const EmptyState = styled.View`
 export default function Notifications() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { setIsTabBarHidden } = useTabBarVisibility();
   const sections = useMemo(() => groupNotificationsBySection(mockNotifications), []);
-
-  useFocusEffect(
-    useCallback(() => {
-      setIsTabBarHidden(true);
-      return () => setIsTabBarHidden(false);
-    }, [setIsTabBarHidden])
-  );
 
   return (
     <Screen>

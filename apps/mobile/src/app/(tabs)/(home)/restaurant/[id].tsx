@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Share, View } from 'react-native';
-import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, {
   scrollTo,
   useAnimatedRef,
@@ -12,7 +12,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { Text } from '@/components/design-system/atoms';
 import { boardTextStyle } from '@/theme';
-import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
 import { useCart } from '@/hooks/useCart';
 import { useMeasureOnTap, type ScreenOrigin } from '@/hooks/useMeasureOnTap';
 import { CartSummaryBar } from '@/features/home/components/CartSummaryBar';
@@ -89,7 +88,6 @@ export default function RestaurantDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { setIsTabBarHidden } = useTabBarVisibility();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollY = useSharedValue(0);
   const sectionOffsets = useRef<Record<string, number>>({});
@@ -117,13 +115,6 @@ export default function RestaurantDetail() {
   const stickyTabsStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: Math.max(0, scrollY.value - (tabsTop.value - compactHeaderHeight)) }],
   }));
-
-  useFocusEffect(
-    useCallback(() => {
-      setIsTabBarHidden(true);
-      return () => setIsTabBarHidden(false);
-    }, [setIsTabBarHidden])
-  );
 
   const restaurant = useMemo(() => getRestaurantById(id), [id]);
   const menuItems = useMemo(() => getMenuItems(id), [id]);

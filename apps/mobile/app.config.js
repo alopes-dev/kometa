@@ -80,7 +80,10 @@ module.exports = {
       policy: "appVersion",
     },
     updates: {
-      url: "https://u.expo.dev/638c24e1-00a3-4df2-8465-37d85d4ef4c5",
+      // Must name the same project as `extra.eas.projectId` above — EAS
+      // refuses to publish when the two disagree, and it cannot rewrite a
+      // dynamic config for you. Change them together.
+      url: "https://u.expo.dev/75bf34f6-7916-48c6-8351-2f46dde12dc7",
     },
   },
 };

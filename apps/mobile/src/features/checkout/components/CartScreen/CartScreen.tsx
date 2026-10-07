@@ -6,7 +6,6 @@ import { describeCartLine } from '@/features/checkout/cartDisplay';
 import { useCart } from '@/hooks/useCart';
 import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
 import { useCheckoutSession } from '@/hooks/useCheckoutSession';
-import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
 import type { MenuItem } from '@/features/home/types';
 import type { CartItem } from '@/hooks/CartProvider';
 import {
@@ -46,7 +45,6 @@ import { Body, Divider, List, Screen } from './CartScreen.styles';
  */
 export function CartScreen() {
   const router = useRouter();
-  const { setIsTabBarHidden } = useTabBarVisibility();
   const {
     items,
     restaurantId,
@@ -75,10 +73,9 @@ export function CartScreen() {
    */
   useFocusEffect(
     useCallback(() => {
-      setIsTabBarHidden(true);
       if (!restaurantId) {
         setIsLoading(false);
-        return () => setIsTabBarHidden(false);
+        return;
       }
 
       const found = revalidateCart(
@@ -97,11 +94,10 @@ export function CartScreen() {
       setUnavailable(unavailableLineIds(found));
       setIsLoading(false);
 
-      return () => setIsTabBarHidden(false);
       // `items` is intentionally read at focus time only: re-running on every
       // quantity change would re-raise an accepted change mid-edit.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [restaurantId, setIsTabBarHidden, setUnavailable])
+    }, [restaurantId, setUnavailable])
   );
 
   const promo = useMemo(

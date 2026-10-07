@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Share } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Animated, {
   scrollTo,
   useAnimatedRef,
@@ -13,7 +13,6 @@ import { Icon, Text } from '@/components/design-system/atoms';
 import type { CartSelection } from '@/hooks/CartProvider';
 import { useCart } from '@/hooks/useCart';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
 import { submitToCart, type CartSubmitter } from '../../cartSubmission';
 import { content } from '../../content';
 import { getProductById } from '../../data';
@@ -70,7 +69,6 @@ export function ProductScreen({
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { addItem, replaceItem, items: cartItems, count: cartCount, subtotal: cartSubtotal } = useCart();
-  const { setIsTabBarHidden } = useTabBarVisibility();
   const reducedMotion = useReducedMotion();
 
   const product = useMemo(() => getProductById(productId), [productId]);
@@ -119,17 +117,6 @@ export function ProductScreen({
   const onScroll = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
-
-  // The board draws no tab bar over the product, and the footer would
-  // otherwise stack on top of one. A sheet leaves the screen behind it
-  // intact, so it has no business hiding that screen's furniture.
-  useFocusEffect(
-    useCallback(() => {
-      if (compact) return;
-      setIsTabBarHidden(true);
-      return () => setIsTabBarHidden(false);
-    }, [setIsTabBarHidden, compact])
-  );
 
   const toggleOption = useCallback(
     (groupId: string, optionId: string) => {

@@ -30,7 +30,6 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { SetupProvider } from "@/hooks/SetupProvider";
 import { useSetup } from "@/hooks/useSetup";
 import { BrandSplash } from "@/features/onboarding";
-import { TabBarVisibilityProvider } from "@/hooks/TabBarVisibilityProvider";
 import { CartProvider } from "@/hooks/CartProvider";
 import { CheckoutFlowProvider } from "@/hooks/CheckoutFlowProvider";
 import { OrdersProvider } from "@/hooks/OrdersProvider";
@@ -112,18 +111,16 @@ function Gate({ onReady }: { onReady: () => void }) {
   return (
     <SafeAreaProvider>
       <StatusBar hidden />
-      <TabBarVisibilityProvider>
-        <CartProvider>
-          <CheckoutFlowProvider>
-            <OrdersProvider>
-              <Navigation
-                hasSeenOnboarding={hasSeenOnboarding}
-                hasCompletedSetup={hasCompletedSetup}
-              />
-            </OrdersProvider>
-          </CheckoutFlowProvider>
-        </CartProvider>
-      </TabBarVisibilityProvider>
+      <CartProvider>
+        <CheckoutFlowProvider>
+          <OrdersProvider>
+            <Navigation
+              hasSeenOnboarding={hasSeenOnboarding}
+              hasCompletedSetup={hasCompletedSetup}
+            />
+          </OrdersProvider>
+        </CheckoutFlowProvider>
+      </CartProvider>
     </SafeAreaProvider>
   );
 }

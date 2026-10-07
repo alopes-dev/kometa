@@ -1,27 +1,34 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTheme } from 'styled-components/native';
-import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
+import { useIsTabBarHidden } from '@/hooks/useIsTabBarHidden';
 
 /**
  * The five tabs the board draws (node 48:20371), in its order and with its
  * wording. "Home" stays English because the board writes it that way; every
  * other label is the Portuguese the rest of the app speaks.
  *
- * The board's icons are Lucide outlines. They resolve here to the closest SF
- * Symbol on iOS and Material Symbol on Android rather than to bundled SVGs,
- * so the bar renders in the platform's own icon language — which is the whole
- * point of a native tab bar. `safari.fill` is the compass and
+ * Home carries the Kometa mark rather than a house. It is the one tab that is
+ * the product rather than a section of it, and the mark is bundled as an image
+ * because no symbol set contains it. The file is the bare mark on transparency
+ * so iOS can treat it as a template and Android can run it through the bar's
+ * icon tint: it greys out and lights up with the rest, instead of sitting
+ * there in brand green as though permanently selected.
+ *
+ * The other four are Lucide outlines on the board. They resolve here to the
+ * closest SF Symbol on iOS and Material Symbol on Android rather than to
+ * bundled SVGs, so the bar renders in the platform's own icon language — which
+ * is the whole point of a native tab bar. `safari.fill` is the compass and
  * `list.bullet.rectangle.fill` the receipt; both have shipped since iOS 15,
  * unlike the literal `receipt` symbol, which comes back empty before iOS 18.
  */
 export default function TabsLayout() {
   const theme = useTheme();
-  const { isTabBarHidden } = useTabBarVisibility();
+  const isTabBarHidden = useIsTabBarHidden();
 
   return (
     <NativeTabs tintColor={theme.colors.brand.base} hidden={isTabBarHidden}>
       <NativeTabs.Trigger name="(home)">
-        <NativeTabs.Trigger.Icon sf="house.fill" md="home" />
+        <NativeTabs.Trigger.Icon src={require('../../../assets/tabs/kometa-mark.png')} />
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(discovery)">

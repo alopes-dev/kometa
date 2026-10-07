@@ -1,12 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, Pressable } from 'react-native';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { Icon, Text } from '@/components/design-system/atoms';
 import { RestaurantCard } from '@/features/home/components/RestaurantCard';
 import { RestaurantListFilterBar } from '@/features/home/components/RestaurantListFilterBar';
-import { useTabBarVisibility } from '@/hooks/useTabBarVisibility';
 import { getRestaurants } from '@/features/home/data';
 import { applyRestaurantSort, filterRestaurants, type RestaurantSort } from '@/features/home/selectors';
 import type { Restaurant } from '@/features/home/types';
@@ -48,16 +47,8 @@ const EmptyState = styled.View`
 export default function RestaurantListing() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { setIsTabBarHidden } = useTabBarVisibility();
   const { category, q } = useLocalSearchParams<{ category?: string; q?: string }>();
   const [sort, setSort] = useState<RestaurantSort | null>(null);
-
-  useFocusEffect(
-    useCallback(() => {
-      setIsTabBarHidden(true);
-      return () => setIsTabBarHidden(false);
-    }, [setIsTabBarHidden])
-  );
 
   const baseResults = useMemo(
     () => filterRestaurants(getRestaurants(), { query: q ?? '', category: category ?? null }),
