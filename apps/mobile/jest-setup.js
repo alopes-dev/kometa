@@ -18,3 +18,9 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 // the same reason as haptics: the automock would return undefined where the
 // real module returns a promise.
 jest.mock('expo-clipboard', () => require('./src/test-utils/clipboard'));
+
+// @gorhom/bottom-sheet builds a Reanimated scroll handler that Reanimated
+// rejects under Jest because it is not a worklet. That is an environment
+// limitation, so the sheet is stood in for; the detents and the
+// no-library fallback are asserted against the component's own exports.
+jest.mock('@gorhom/bottom-sheet', () => require('./src/test-utils/bottomSheet'));

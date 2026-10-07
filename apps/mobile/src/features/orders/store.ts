@@ -115,3 +115,24 @@ function isOrderRecord(value: unknown): value is OrderRecord {
     Array.isArray(candidate.events)
   );
 }
+
+/**
+ * How long a confirmed snapshot stays presentable as current.
+ *
+ * Board 18 polls active tracking every 15-30s; past twice the slow end the
+ * screen stops implying the state is live and starts datestamping it, which
+ * is what board 13's offline banner does.
+ */
+export const SNAPSHOT_STALE_MS = 60_000;
+
+/**
+ * Whether what the app last confirmed about this order has aged.
+ *
+ * Takes `now` rather than reading the clock, because staleness is a question
+ * asked at a moment: a value stored anywhere would itself go stale.
+ * An order that has stopped moving is never stale — it is finished.
+ */
+export function isSnapshotStale(order: OrderRecord, now: number): boolean {
+  if (order.stage === null || isTerminal(order.stage)) return false;
+  return now - order.snapshotAt > SNAPSHOT_STALE_MS;
+}
