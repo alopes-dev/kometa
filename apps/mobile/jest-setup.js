@@ -13,3 +13,8 @@ jest.mock('expo-haptics', () => require('./src/test-utils/haptics'));
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
+
+// expo-clipboard backs the order number's Copiar action. Registered here for
+// the same reason as haptics: the automock would return undefined where the
+// real module returns a promise.
+jest.mock('expo-clipboard', () => require('./src/test-utils/clipboard'));

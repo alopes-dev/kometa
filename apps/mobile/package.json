@@ -50,6 +50,7 @@
     "@rnmapbox/maps": "^10.3.5",
     "css-to-react-native": "3.2.0",
     "expo": "^57.0.0",
+    "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.7",
     "expo-dev-client": "~57.0.12",
     "expo-font": "~57.0.1",
