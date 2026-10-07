@@ -7,6 +7,7 @@ import { getRestaurantById } from '@/features/home/data';
 import { formatDeliveryWindow, formatKwanza } from '@/features/home/format';
 import { useCart } from '@/hooks/useCart';
 import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
+import { useOrders } from '@/hooks/useOrders';
 import { checkoutTextStyle, continuousCorners } from '@/theme';
 import { content } from '../../content';
 import { getPaymentMethod, mockAddresses } from '../../mockData';
@@ -76,7 +77,9 @@ export function StatusScreen() {
   const router = useRouter();
   const { simulate } = useLocalSearchParams<{ simulate?: 'pending' | 'failed' }>();
   const { items, subtotal, restaurantId, clearCart } = useCart();
-  const { addressId, paymentMethodId, promoCode, order, setOrder, reset } = useCheckoutFlow();
+  const { addressId, paymentMethodId, promoCode, instructions, order, setOrder, reset } =
+    useCheckoutFlow();
+  const { placeOrder } = useOrders();
 
   const [isSubmitting, setIsSubmitting] = useState(order === null);
   const hasSubmitted = useRef(false);
@@ -121,9 +124,8 @@ export function StatusScreen() {
       setOrder(result);
       setIsSubmitting(false);
       if (result.status === 'confirmed') {
-        // Board 19 · 07: the success haptic belongs to a confirmed order
-        // and to nothing before it.
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        // The success haptic moved to the confirmation screen (page 69:4724,
+        // board 04), which is where the confirmation is now presented.
         clearSession();
       }
     });
@@ -139,18 +141,39 @@ export function StatusScreen() {
     setIsSubmitting(true);
   };
 
+  /**
+   * Hands the confirmed payment to the orders feature.
+   *
+   * This is the single point where the two lifecycles meet: a payment that
+   * reached `confirmed` creates an operational order, which `placeOrder`
+   * starts at stage `pending`. Board 15 forbids any earlier crossing — a
+   * pending payment must not look like a confirmed order.
+   */
   const track = (confirmed: Order) => {
+    placeOrder({
+      orderId: confirmed.orderId,
+      merchantId: restaurantId ?? '',
+      totals: confirmed.totals,
+      lines: items.map((entry) => ({
+        productId: entry.item.id,
+        name: entry.item.name,
+        quantity: entry.quantity,
+        unitPrice: entry.unitPrice,
+      })),
+      delivery: {
+        addressLabel: address?.label ?? '',
+        zone: address?.zone ?? '',
+        city: address?.city ?? '',
+        instructions: instructions || undefined,
+      },
+      payment: method?.id === 'cash' ? undefined : { brand: 'Visa', last4: '2408' },
+      paymentStatus: confirmed.status,
+    });
     clearCart();
     reset();
     router.replace({
-      pathname: '/order-tracking',
-      params: {
-        restaurantId: restaurantId ?? '',
-        itemCount: String(items.length),
-        total: String(confirmed.totals.total),
-        deliverySummary: address ? `${address.label} · ${address.zone}` : content.deliveryRow,
-        paymentSummary: method?.label ?? '',
-      },
+      pathname: '/(tabs)/(orders)/[orderId]/confirmation',
+      params: { orderId: confirmed.orderId },
     });
   };
 
