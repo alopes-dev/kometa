@@ -8,7 +8,7 @@ const INITIAL_METRICS = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
-function renderState(props: Partial<Parameters<typeof PaymentStateScreen>[0]> = {}) {
+function renderState(props: Record<string, unknown> = {}) {
   return render(
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
       <ThemeProvider>
@@ -16,10 +16,10 @@ function renderState(props: Partial<Parameters<typeof PaymentStateScreen>[0]> = 
           state="pending"
           merchantName="Burger House"
           orderId="CM-10482"
-          total={12_400}
-          onPrimary={jest.fn()}
-          onSecondary={jest.fn()}
-          {...props}
+          total={11_100}
+          onCompletePayment={jest.fn()}
+          onCancelOrder={jest.fn()}
+          {...(props as object)}
         />
       </ThemeProvider>
     </SafeAreaProvider>
@@ -42,17 +42,24 @@ describe('PaymentStateScreen · pending', () => {
   it('identifies the order and the amount', () => {
     renderState();
     expect(screen.getByText('#CM-10482')).toBeTruthy();
-    expect(screen.getByText('12.400 Kz')).toBeTruthy();
+    expect(screen.getByText('11.100 Kz')).toBeTruthy();
   });
 
-  it('offers completing the payment or cancelling the order', () => {
-    const onPrimary = jest.fn();
-    const onSecondary = jest.fn();
-    renderState({ onPrimary, onSecondary });
+  /**
+   * Final review, Critical 1. The labels and the handlers must agree:
+   * `Cancelar pedido` previously called the same handler the failed state
+   * used to change the payment method.
+   */
+  it('wires each label to the action it names', () => {
+    const onCompletePayment = jest.fn();
+    const onCancelOrder = jest.fn();
+    renderState({ onCompletePayment, onCancelOrder });
     fireEvent.press(screen.getByRole('button', { name: /Concluir pagamento/ }));
+    expect(onCompletePayment).toHaveBeenCalledTimes(1);
+    expect(onCancelOrder).not.toHaveBeenCalled();
+
     fireEvent.press(screen.getByRole('button', { name: /Cancelar pedido/ }));
-    expect(onPrimary).toHaveBeenCalledTimes(1);
-    expect(onSecondary).toHaveBeenCalledTimes(1);
+    expect(onCancelOrder).toHaveBeenCalledTimes(1);
   });
 
   /**
@@ -71,7 +78,7 @@ describe('PaymentStateScreen · pending', () => {
 describe('PaymentStateScreen · failed', () => {
   /** Board 15: "Diz se houve cobrança." The first fact is that there was none. */
   it('states plainly that the card was not charged', () => {
-    renderState({ state: 'failed' });
+    renderState({ state: 'failed', onRetry: jest.fn(), onChangeMethod: jest.fn() });
     expect(screen.getByText('O pagamento não foi concluído')).toBeTruthy();
     expect(
       screen.getByText('Não cobrámos o teu cartão. Tenta novamente ou escolhe outro método.')
@@ -79,13 +86,19 @@ describe('PaymentStateScreen · failed', () => {
   });
 
   it('offers retrying or changing the method', () => {
-    renderState({ state: 'failed' });
-    expect(screen.getByRole('button', { name: /Tentar novamente/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Alterar método/ })).toBeTruthy();
+    const onRetry = jest.fn();
+    const onChangeMethod = jest.fn();
+    renderState({ state: 'failed', onRetry, onChangeMethod });
+    fireEvent.press(screen.getByRole('button', { name: /Tentar novamente/ }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onChangeMethod).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByRole('button', { name: /Alterar método/ }));
+    expect(onChangeMethod).toHaveBeenCalledTimes(1);
   });
 
   it('shows no operational state and no ETA either', () => {
-    renderState({ state: 'failed' });
+    renderState({ state: 'failed', onRetry: jest.fn(), onChangeMethod: jest.fn() });
     expect(screen.queryByText(/Chega em/)).toBeNull();
   });
 });

@@ -58,6 +58,11 @@ describe('etaLine', () => {
   it('says nothing for an order with no ETA', () => {
     expect(content.etaLine({ kind: 'none' })).toBe('');
   });
+
+  /** Final review, Minor 19: "Chega em Agora" is not a sentence. */
+  it('states arrival rather than prefixing it', () => {
+    expect(content.etaLine({ kind: 'now' })).toBe('O courier chegou');
+  });
 });
 
 describe('etaSpoken', () => {

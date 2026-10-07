@@ -100,7 +100,9 @@ export type CancelSheetProps = {
 };
 
 export function CancelSheet({ onConfirm, onKeep, impact }: CancelSheetProps) {
-  const [reason, setReason] = useState(content.cancelReasons[0]);
+  // Nothing is pre-selected: board 14 asks for the reason, and a default
+  // answers for the customer in the one place that must be their own words.
+  const [reason, setReason] = useState<string | null>(null);
 
   return (
     <Sheet>
@@ -145,9 +147,11 @@ export function CancelSheet({ onConfirm, onKeep, impact }: CancelSheetProps) {
       ) : null}
 
       <Pressable
-        onPress={() => onConfirm(reason)}
+        onPress={() => (reason === null ? undefined : onConfirm(reason))}
+        disabled={reason === null}
         accessibilityRole="button"
         accessibilityLabel={content.confirmCancel}
+        accessibilityState={{ disabled: reason === null }}
       >
         <Destructive>
           <DestructiveLabel>{content.confirmCancel}</DestructiveLabel>

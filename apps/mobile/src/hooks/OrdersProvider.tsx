@@ -63,12 +63,19 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadOrders().then((saved) => {
+    loadOrders().then((result) => {
       if (cancelled) return;
-      // With no backend, an empty device is seeded from the board's fixtures
-      // so the orders list has the content the Figma draws.
-      setOrders(saved.length > 0 ? saved : mockOrders);
-      hydrated.current = true;
+      // With no backend, a genuinely empty device is seeded from the board's
+      // fixtures so the orders list has the content the Figma draws.
+      if (result.ok) {
+        setOrders(result.orders.length > 0 ? result.orders : mockOrders);
+        hydrated.current = true;
+      } else {
+        // The read FAILED — the device may well hold real orders this process
+        // could not see. Showing nothing is recoverable; writing fixtures over
+        // them is not, so persistence stays switched off for this session.
+        setOrders([]);
+      }
       setIsReady(true);
     });
     return () => {

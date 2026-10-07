@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/components/design-system/ThemeProvider';
 import { mockOrders } from '../../mockData';
@@ -83,6 +83,65 @@ describe('TrackingScreen', () => {
 
     it('still offers the courier and the order state', () => {
       renderTracking({ order: { ...fresh, snapshotAt: NOW - 120_000 } });
+      expect(screen.getByText('João Manuel')).toBeTruthy();
+      expect(screen.getByLabelText('Estado: A caminho')).toBeTruthy();
+    });
+  });
+
+  describe('once it has been delivered', () => {
+    const DELIVERED_AT = new Date('2026-10-07T19:18:00').getTime();
+    const done = {
+      ...fresh,
+      stage: 'delivered' as const,
+      events: [...fresh.events, { stage: 'delivered' as const, occurredAt: DELIVERED_AT }],
+    };
+
+    /**
+     * Final review, Critical 3. The ETA was resolved without the delivery
+     * timestamp, so it rendered as an empty string while the title still
+     * said the order was on its way. Board 18 requires `hora real` here.
+     */
+    it('says it arrived, at the time it arrived', () => {
+      renderTracking({ order: done });
+      expect(screen.getByText('Entregue às 19:18')).toBeTruthy();
+      expect(screen.queryByText('O teu pedido está a caminho')).toBeNull();
+    });
+
+    /** Flow A has to be able to finish. */
+    it('hands off to the delivered screen', () => {
+      const onDelivered = jest.fn();
+      renderTracking({ order: done, onDelivered });
+      expect(onDelivered).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not hand off while the order is still moving', () => {
+      const onDelivered = jest.fn();
+      renderTracking({ onDelivered });
+      expect(onDelivered).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('with no connection', () => {
+    /**
+     * Final review, Important 4. Board 13's offline state existed only as
+     * unused strings. It keeps every fact on screen, dates them, puts the
+     * title in the past tense and offers a way to try again.
+     */
+    it('says so, dates what it last knew, and offers a retry', () => {
+      const onRetry = jest.fn();
+      renderTracking({ offline: true, onRetry, order: { ...fresh, snapshotAt: NOW - 120_000 } });
+
+      expect(screen.getByText('Sem conexão')).toBeTruthy();
+      expect(screen.getByText('O teu pedido estava a caminho')).toBeTruthy();
+      expect(screen.getByText('Último ETA: ~12 min')).toBeTruthy();
+
+      fireEvent.press(screen.getByRole('button', { name: /Tentar novamente/ }));
+      expect(onRetry).toHaveBeenCalledTimes(1);
+    });
+
+    /** Board 13: "Nunca apagar contexto." */
+    it('keeps the courier and the order state reachable', () => {
+      renderTracking({ offline: true, onRetry: jest.fn() });
       expect(screen.getByText('João Manuel')).toBeTruthy();
       expect(screen.getByLabelText('Estado: A caminho')).toBeTruthy();
     });

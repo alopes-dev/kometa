@@ -1,9 +1,10 @@
-import { render } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import { ScrollView } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HomeScreen } from './HomeScreen';
 import { ThemeProvider } from '@/components/design-system/ThemeProvider';
 import { CartProvider } from '@/hooks/CartProvider';
+import { mockOrders } from '@/features/orders/mockData';
 import { RESTAURANT_CARD_WIDTH } from '../RestaurantCard';
 import { CAROUSEL_GAP } from './HomeScreen.styles';
 
@@ -50,5 +51,46 @@ describe('HomeScreen', () => {
       expect(carousel.props.decelerationRate).toBe('fast');
       expect(carousel.props.snapToAlignment).toBe('start');
     }
+  });
+});
+
+describe('the active order card on Home', () => {
+  const order = {
+    ...mockOrders[0],
+    stage: 'transit' as const,
+  };
+
+  /**
+   * Final review, Important 18. Task 14 required this and it was never
+   * written: the card is the whole reason Home reads the order store.
+   */
+  it('shows the order in flight', () => {
+    render(
+      <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
+        <ThemeProvider>
+          <CartProvider>
+            <HomeScreen activeOrder={order} activeOrderMerchant="Burger House" />
+          </CartProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    // The merchant name also appears on the restaurant carousels, so the
+    // order number is what identifies this card specifically.
+    expect(screen.getByText('#CM-10482')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Acompanhar pedido/ })).toBeTruthy();
+  });
+
+  /** Board 05 keeps it only while there IS one. */
+  it('draws nothing once there is no order in flight', () => {
+    render(
+      <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
+        <ThemeProvider>
+          <CartProvider>
+            <HomeScreen />
+          </CartProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    expect(screen.queryByRole('button', { name: /Acompanhar pedido/ })).toBeNull();
   });
 });

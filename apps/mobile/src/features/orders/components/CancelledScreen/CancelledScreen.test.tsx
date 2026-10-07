@@ -34,6 +34,19 @@ describe('CancelledScreen', () => {
     expect(screen.getByText('Estorno iniciado')).toBeTruthy();
   });
 
+  /**
+   * Final review, Important 14. An order cancelled before its payment ever
+   * settled has nothing to refund. Board 13's wording for that case is
+   * `Sem cobrança`, not a refund window.
+   */
+  it('promises no refund when nothing was charged', () => {
+    renderCancelled({
+      order: { ...mockOrders[0], stage: 'cancelled', paymentStatus: 'pending' },
+    });
+    expect(screen.queryByText(/estorno/i)).toBeNull();
+    expect(screen.getByText('Sem cobrança')).toBeTruthy();
+  });
+
   it('offers a way back and a way to get help', () => {
     const onBackToOrders = jest.fn();
     const onHelp = jest.fn();

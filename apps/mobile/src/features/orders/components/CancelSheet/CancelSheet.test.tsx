@@ -34,6 +34,18 @@ describe('CancelSheet', () => {
     expect(onConfirm).toHaveBeenCalledWith('Tempo de espera');
   });
 
+  /**
+   * Final review, Minor 22. The first reason was pre-selected, so a customer
+   * who tapped straight through was recorded as having said "Enganei-me no
+   * pedido". Board 14 asks for the reason; it does not assume one.
+   */
+  it('assumes no reason on the customer behalf', () => {
+    const onConfirm = jest.fn();
+    renderSheet({ onConfirm });
+    fireEvent.press(screen.getByRole('button', { name: /Confirmar cancelamento/ }));
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it('lets the order be kept', () => {
     const onKeep = jest.fn();
     renderSheet({ onKeep });

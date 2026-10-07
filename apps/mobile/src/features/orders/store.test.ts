@@ -5,6 +5,7 @@ import {
   applyStageEvent,
   historyOrders,
   loadOrders,
+  refundState,
   saveOrders,
 } from './store';
 import { mockOrders } from './mockData';
@@ -83,6 +84,19 @@ describe('applyStageEvent', () => {
     expect(applyStageEvent(order, { stage: 'confirmed', occurredAt: 10_000 })).toBe(order);
   });
 
+  /**
+   * Final review, Important 10. `stageIndex('cancelled')` is -1, so a naive
+   * forward check lets ANY stage past it. A cancelled order that comes back
+   * to life is worse than one that will not move.
+   */
+  it('refuses to move an order that has already ended', () => {
+    const done = { ...mockOrders[0], stage: 'cancelled' as const, events: [], snapshotAt: 0 };
+    expect(applyStageEvent(done, { stage: 'transit', occurredAt: 12_000 })).toBe(done);
+
+    const delivered = { ...mockOrders[0], stage: 'delivered' as const, events: [], snapshotAt: 0 };
+    expect(applyStageEvent(delivered, { stage: 'cancelled', occurredAt: 12_000 })).toBe(delivered);
+  });
+
   it('accepts a cancellation from anywhere on the line', () => {
     const order = { ...mockOrders[0], stage: 'transit' as const, events: [], snapshotAt: 0 };
     expect(applyStageEvent(order, { stage: 'cancelled', occurredAt: 11_000 })).toMatchObject({
@@ -91,10 +105,38 @@ describe('applyStageEvent', () => {
   });
 });
 
+describe('refundState', () => {
+  /**
+   * Final review, Important 14. An order cancelled before it was ever paid
+   * has nothing to refund, and telling the customer money is coming back is
+   * a promise the app cannot keep. The spec models this as
+   * `Cancel { reason, refundState, refundWindow }`.
+   */
+  it('is none when the payment never settled', () => {
+    const unpaid = { ...mockOrders[0], paymentStatus: 'pending' as const, stage: null };
+    expect(refundState(unpaid)).toBe('none');
+  });
+
+  it('is started once a settled payment is cancelled', () => {
+    const paid = {
+      ...mockOrders[0],
+      paymentStatus: 'confirmed' as const,
+      stage: 'cancelled' as const,
+    };
+    expect(refundState(paid)).toBe('started');
+  });
+
+  it('is none for an order that was delivered, not cancelled', () => {
+    expect(refundState({ ...mockOrders[1], stage: 'delivered' as const })).toBe('none');
+  });
+});
+
 describe('persistence', () => {
   it('round-trips the orders it saved', async () => {
     await saveOrders(mockOrders);
-    expect((await loadOrders()).map((order) => order.orderId)).toEqual(
+    const result = await loadOrders();
+    expect(result.ok).toBe(true);
+    expect(result.orders.map((order) => order.orderId)).toEqual(
       mockOrders.map((order) => order.orderId)
     );
   });
@@ -106,10 +148,36 @@ describe('persistence', () => {
    */
   it('reports no orders rather than throwing on a corrupt payload', async () => {
     await AsyncStorage.setItem(ORDERS_KEY, '{ this is not json');
-    await expect(loadOrders()).resolves.toEqual([]);
+    await expect(loadOrders()).resolves.toEqual({ ok: false, orders: [] });
   });
 
   it('reports no orders when nothing was ever saved', async () => {
-    await expect(loadOrders()).resolves.toEqual([]);
+    await expect(loadOrders()).resolves.toEqual({ ok: true, orders: [] });
+  });
+
+  /**
+   * Final review, Important 9. The guard claimed to check "the fields no list
+   * row can be rendered without" but checked three that a row never reads.
+   * A record without `lines` crashes OrderHistoryRow at `lines.reduce`.
+   */
+  it('discards a record missing the fields a row actually renders', async () => {
+    await AsyncStorage.setItem(
+      ORDERS_KEY,
+      JSON.stringify([{ orderId: 'X', merchantId: 'r1', events: [] }])
+    );
+    await expect(loadOrders()).resolves.toEqual({ ok: true, orders: [] });
+  });
+
+  /**
+   * Final review, Important 8. A read that THREW is not the same as a device
+   * with no saved orders: treating it as empty lets the provider seed
+   * fixtures and write them over real history. "Nunca apagar contexto."
+   */
+  it('distinguishes a failed read from an empty one', async () => {
+    const getItem = jest
+      .spyOn(AsyncStorage, 'getItem')
+      .mockRejectedValueOnce(new Error('storage unavailable'));
+    await expect(loadOrders()).resolves.toEqual({ ok: false, orders: [] });
+    getItem.mockRestore();
   });
 });

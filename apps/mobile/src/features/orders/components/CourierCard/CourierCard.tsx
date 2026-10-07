@@ -80,7 +80,7 @@ export function CourierCard({
     : `${courier.vehicle} · ${courier.plate}`;
 
   return (
-    <Card>
+    <Card accessible accessibilityLabel={content.courierLabel(courier)}>
       <Head>
         <Portrait>
           <Icon name="person-outline" sf="person.fill" size={20} color="success" />

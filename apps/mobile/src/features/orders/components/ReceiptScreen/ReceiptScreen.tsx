@@ -74,6 +74,9 @@ export type ReceiptScreenProps = {
 
 export function ReceiptScreen({ order, onBack, onDownload }: ReceiptScreenProps) {
   const card = order.payment ? `${order.payment.brand} •••• ${order.payment.last4}` : '—';
+  // A receipt states what happened to the money. For a cancelled order that
+  // is not "pago", and the figure is not a charge that stands.
+  const settled = order.paymentStatus === 'confirmed' && order.stage !== 'cancelled';
 
   return (
     <Screen>
@@ -83,14 +86,16 @@ export function ReceiptScreen({ order, onBack, onDownload }: ReceiptScreenProps)
         <Body>
           <Card>
             <Title>{content.receiptTitle}</Title>
-            <Caption>Pedido #{order.orderId} · pago</Caption>
+            <Caption>
+              Pedido #{order.orderId} · {settled ? 'pago' : 'cancelado'}
+            </Caption>
             <Divider />
             <Row>
               <Label>{content.method}</Label>
               <Value>{card}</Value>
             </Row>
             <Row>
-              <Label>{content.totalCharged}</Label>
+              <Label>{settled ? content.totalCharged : content.total}</Label>
               <Value>{formatKwanza(order.totals.total)}</Value>
             </Row>
             <Button variant="outline" size="lg" shape="pill" onPress={onDownload}>

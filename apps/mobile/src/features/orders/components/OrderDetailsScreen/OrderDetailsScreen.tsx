@@ -40,6 +40,10 @@ export type OrderDetailsScreenProps = {
   onReceipt: () => void;
   onHelp: () => void;
   onReorder: () => void;
+  /** Board 10's progress screen. */
+  onTimeline: () => void;
+  /** Board 14. Absent when the order can no longer be cancelled. */
+  onCancel?: () => void;
 };
 
 export function OrderDetailsScreen({
@@ -49,6 +53,8 @@ export function OrderDetailsScreen({
   onReceipt,
   onHelp,
   onReorder,
+  onTimeline,
+  onCancel,
 }: OrderDetailsScreenProps) {
   const { totals, delivery } = order;
 
@@ -122,6 +128,21 @@ export function OrderDetailsScreen({
             <SecondaryAction label={content.help} icon="help-circle-outline" onPress={onHelp} />
             <SecondaryAction label={content.reorder} icon="refresh-outline" onPress={onReorder} />
           </Actions>
+
+          <Actions>
+            <SecondaryAction
+              label={content.timelineTitle}
+              icon="time-outline"
+              onPress={onTimeline}
+            />
+            {onCancel ? (
+              <SecondaryAction
+                label={content.cancelOrder}
+                icon="close-circle-outline"
+                onPress={onCancel}
+              />
+            ) : null}
+          </Actions>
         </Body>
       </ScrollView>
     </Screen>
@@ -134,7 +155,12 @@ function SecondaryAction({
   onPress,
 }: {
   label: string;
-  icon: 'receipt-outline' | 'help-circle-outline' | 'refresh-outline';
+  icon:
+    | 'receipt-outline'
+    | 'help-circle-outline'
+    | 'refresh-outline'
+    | 'time-outline'
+    | 'close-circle-outline';
   onPress: () => void;
 }) {
   return (

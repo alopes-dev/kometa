@@ -42,13 +42,19 @@ const NoticeSlot = styled.View`
 export type MapFallbackProps = {
   reason: 'unavailable' | 'offline';
   /**
+   * Board 16's textual alternative to the map: origin, destination, stage and
+   * ETA in a sentence. The map can be hidden without loss of function only if
+   * something says what it would have shown.
+   */
+  alternative?: string;
+  /**
    * Board 08: denying location never blocks tracking. It is reported as a
    * fact about what is shared, not as a failure to recover from.
    */
   locationDenied?: boolean;
 };
 
-export function MapFallback({ reason, locationDenied }: MapFallbackProps) {
+export function MapFallback({ reason, locationDenied, alternative }: MapFallbackProps) {
   return (
     <Area
       accessible
@@ -60,8 +66,9 @@ export function MapFallback({ reason, locationDenied }: MapFallbackProps) {
         size={28}
         color="secondary"
       />
-      <Title>{content.mapUnavailableTitle}</Title>
+      <Title accessibilityRole="header">{content.mapUnavailableTitle}</Title>
       <Body>{content.mapUnavailableBody}</Body>
+      {alternative ? <Body accessibilityLabel={alternative}>{alternative}</Body> : null}
 
       {locationDenied ? (
         <NoticeSlot>

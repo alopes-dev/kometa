@@ -95,47 +95,6 @@ export function StatusScreen() {
     discount: promoDiscount(promo),
   });
 
-  useEffect(() => {
-    if (hasSubmitted.current || !method || !restaurantId || order) return;
-    hasSubmitted.current = true;
-
-    const key = buildIdempotencyKey({
-      merchantId: restaurantId,
-      lines: items.map((entry) => `${entry.lineId}:${entry.quantity}`),
-      total: summary.total,
-    });
-
-    const gateway = () =>
-      new Promise<GatewayResult>((resolve) => {
-        setTimeout(() => {
-          if (simulate === 'failed') resolve({ outcome: 'failed' });
-          else if (simulate === 'pending') resolve({ outcome: 'timeout' });
-          else resolve({ outcome: 'confirmed', providerReference: key });
-        }, SETTLE_DELAY);
-      });
-
-    let cancelled = false;
-    submitOrder({
-      key,
-      totals: summary,
-      settlesOnDelivery: method.settlesOnDelivery,
-      gateway,
-    }).then((result) => {
-      if (cancelled) return;
-      setOrder(result);
-      setIsSubmitting(false);
-      if (result.status === 'confirmed') {
-        // The success haptic moved to the confirmation screen (page 69:4724,
-        // board 04), which is where the confirmation is now presented.
-        clearSession();
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [items, method, order, restaurantId, setOrder, simulate, summary]);
-
   const retry = () => {
     hasSubmitted.current = false;
     setOrder(null);
@@ -178,6 +137,49 @@ export function StatusScreen() {
     });
   };
 
+  useEffect(() => {
+    if (hasSubmitted.current || !method || !restaurantId || order) return;
+    hasSubmitted.current = true;
+
+    const key = buildIdempotencyKey({
+      merchantId: restaurantId,
+      lines: items.map((entry) => `${entry.lineId}:${entry.quantity}`),
+      total: summary.total,
+    });
+
+    const gateway = () =>
+      new Promise<GatewayResult>((resolve) => {
+        setTimeout(() => {
+          if (simulate === 'failed') resolve({ outcome: 'failed' });
+          else if (simulate === 'pending') resolve({ outcome: 'timeout' });
+          else resolve({ outcome: 'confirmed', providerReference: key });
+        }, SETTLE_DELAY);
+      });
+
+    let cancelled = false;
+    submitOrder({
+      key,
+      totals: summary,
+      settlesOnDelivery: method.settlesOnDelivery,
+      gateway,
+    }).then((result) => {
+      if (cancelled) return;
+      setOrder(result);
+      setIsSubmitting(false);
+      if (result.status === 'confirmed') {
+        // The order is created HERE, not on a tap. Waiting for the customer
+        // to press a button meant a paid order vanished if they backed out of
+        // the confirmation screen instead.
+        clearSession();
+        track(result);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items, method, order, restaurantId, setOrder, simulate, summary]);
+
   if (isSubmitting || !order) {
     return (
       <Screen>
@@ -204,63 +206,40 @@ export function StatusScreen() {
     );
   }
 
-  if (order.status === 'pending' || order.status === 'failed') {
+  if (order.status === 'failed') {
     return (
       <PaymentStateScreen
-        state={order.status}
+        state="failed"
         merchantName={merchant?.name ?? ''}
         orderId={order.orderId}
         total={order.totals.total}
-        onPrimary={order.status === 'failed' ? retry : retry}
-        onSecondary={() => router.replace('/checkout/payment')}
+        onRetry={retry}
+        onChangeMethod={() => router.replace('/checkout/payment')}
       />
     );
   }
 
-  return (
-    <Screen>
-      <ScreenHeader
-        title={content.confirmedTitle}
-        caption={order.orderId}
-        onBack={() => track(order)}
+  if (order.status === 'pending') {
+    return (
+      <PaymentStateScreen
+        state="pending"
+        merchantName={merchant?.name ?? ''}
+        orderId={order.orderId}
+        total={order.totals.total}
+        // Idempotent by construction: the key is derived from the cart, so a
+        // second attempt is recognised as the same order rather than a new
+        // one. Board 15's "Idempotência".
+        onCompletePayment={retry}
+        onCancelOrder={() => {
+          reset();
+          router.replace('/cart');
+        }}
       />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <StateScreen
-          tone="success"
-          title={content.confirmedHeadline}
-          body={content.confirmedBody(merchant?.name ?? '')}
-        />
-        <Body>
-          <Facts>
-            <Fact>
-              <FactLabel>{content.forecastRow}</FactLabel>
-              <FactValue>
-                {merchant ? formatDeliveryWindow(merchant.deliveryTimeMinutes) : content.etaBody}
-              </FactValue>
-            </Fact>
-            <Fact>
-              <FactLabel>{content.deliveryRow}</FactLabel>
-              <FactValue>{address ? `${address.label} · ${address.zone}` : ''}</FactValue>
-            </Fact>
-            <Fact>
-              <FactLabel>{content.totalRow}</FactLabel>
-              <FactValue>{formatKwanza(order.totals.total)}</FactValue>
-            </Fact>
-          </Facts>
-          {method?.settlesOnDelivery ? (
-            <FeedbackBanner
-              tone="info"
-              icon={method.icon}
-              title={method.label}
-              body={content.cashOnDeliveryBody(order.totals.total)}
-            />
-          ) : null}
-        </Body>
-      </ScrollView>
-      <CheckoutAction
-        contract={{ label: content.trackOrder, tone: 'brand', enabled: true }}
-        onPress={() => track(order)}
-      />
-    </Screen>
-  );
+    );
+  }
+
+  // A confirmed payment has already navigated to board 04's confirmation
+  // screen from the submit handler above. Rendering a second confirmation
+  // here is what made the customer confirm the same order twice.
+  return null;
 }

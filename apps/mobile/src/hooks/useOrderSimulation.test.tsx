@@ -21,7 +21,15 @@ describe('useOrderSimulation', () => {
    * A screen that owns a timer leaks it. The whole reason the simulation
    * lives outside the component is so unmounting reliably stops it.
    */
-  it('stops its clock when the screen goes away', () => {
+  it('stops its clock when the screen goes away', async () => {
+    // The environment holds one ambient timer of its own (the AsyncStorage
+    // stand-in), so this measures the simulation's timer specifically rather
+    // than asserting the process has none.
+    const idle = renderHook(() => useOrders(), { wrapper });
+    await waitFor(() => expect(idle.result.current.isReady).toBe(true));
+    const ambient = jest.getTimerCount();
+    idle.unmount();
+
     const { result, unmount } = renderHook(
       () => {
         useOrderSimulation('CM-10482');
@@ -30,11 +38,14 @@ describe('useOrderSimulation', () => {
       { wrapper }
     );
 
+    // Wait for hydration, or the hook finds no order, starts no clock, and
+    // the assertion below passes against a leak it never created.
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    await waitFor(() => expect(result.current.byId('CM-10482')).toBeDefined());
+    expect(jest.getTimerCount()).toBe(ambient + 1);
+
     unmount();
-    const before = jest.getTimerCount();
-    jest.advanceTimersByTime(STAGE_INTERVAL_MS * 5);
-    expect(before).toBe(0);
-    expect(result.current).toBeDefined();
+    expect(jest.getTimerCount()).toBe(ambient);
   });
 
   it('runs no clock for an order that is not there', () => {

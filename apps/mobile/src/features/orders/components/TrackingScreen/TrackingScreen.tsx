@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import styled from 'styled-components/native';
+import { Button } from '@/components/design-system/atoms';
 import { ordersTextStyle } from '@/theme';
 import { content } from '../../content';
 import { courierVisibility } from '../../stages';
@@ -80,6 +81,12 @@ export type TrackingScreenProps = {
    */
   delay?: { from: number; band: EtaBand };
   locationDenied?: boolean;
+  /** Called once the order has landed, so flow A can reach board 11. */
+  onDelivered?: () => void;
+  /** Board 13: the device could not reach the service. */
+  offline?: boolean;
+  /** Board 13's `Tentar novamente`. */
+  onRetry?: () => void;
   /** Injected so freshness is deterministic in a test. */
   now?: number;
 };
@@ -92,6 +99,9 @@ export function TrackingScreen({
   onCall,
   delay,
   locationDenied,
+  onDelivered,
+  offline,
+  onRetry,
   now,
 }: TrackingScreenProps) {
   // Freshness is a question about *this moment*, so it needs a value that
@@ -100,14 +110,33 @@ export function TrackingScreen({
   // stale, which is the one thing board 13 asks it to do.
   const ticking = useTicking(STALE_TICK_MS);
   const moment = now ?? ticking;
+  const landed = order.stage === 'delivered';
+
+  useEffect(() => {
+    if (landed) onDelivered?.();
+  }, [landed, onDelivered]);
 
   if (order.stage === null) return null;
 
   const stale = isSnapshotStale(order, moment);
-  const band = etaBand(order.stage);
   const delivered = order.events.find((event) => event.stage === 'delivered')?.occurredAt;
+  // The delivery timestamp is what turns board 18's `hora real` into a real
+  // hour. Resolving the band without it rendered an empty ETA beneath a title
+  // still claiming the order was on its way.
+  const band = etaBand(order.stage, delivered);
 
-  const title = delay ? content.stillOnTheWay : content.onTheWay;
+  // Board 13 puts the title in the past tense when the app cannot confirm
+  // the present: "estava a caminho" is what it last knew to be true.
+  const title = landed
+    ? content.deliveredHeadline
+    : offline
+      ? content.wasOnTheWay
+      : delay
+        ? content.stillOnTheWay
+        : content.onTheWay;
+
+  // Offline, every figure on screen is a last-known one, whatever its age.
+  const dated = stale || offline === true;
 
   return (
     <Screen>
@@ -119,6 +148,14 @@ export function TrackingScreen({
 
       <TrackingSheet>
         <Sheet>
+          {offline ? (
+            <StatusBanner
+              tone="info"
+              title={content.offlineTitle}
+              body={content.offlineBody(formatEta({ kind: 'time', at: order.snapshotAt }))}
+            />
+          ) : null}
+
           {delay ? (
             <StatusBanner
               tone="warning"
@@ -134,9 +171,9 @@ export function TrackingScreen({
               still the best the app has, and saying so is what makes it
               honest.
             */}
-            <Eta>{stale ? content.lastEta(band) : content.etaLine(band)}</Eta>
+            <Eta>{dated ? content.lastEta(band) : content.etaLine(band)}</Eta>
             <Freshness>
-              {stale
+              {dated
                 ? content.lastUpdatedAt(formatEta({ kind: 'time', at: order.snapshotAt }))
                 : content.updatedNow}
             </Freshness>
@@ -145,6 +182,12 @@ export function TrackingScreen({
           <View style={{ alignSelf: 'flex-start' }}>
             <OrderStatusChip stage={order.stage} />
           </View>
+
+          {offline && onRetry ? (
+            <Button variant="outline" size="lg" shape="pill" onPress={onRetry}>
+              {content.retry}
+            </Button>
+          ) : null}
 
           <CourierCard
             visibility={courierVisibility(order.stage)}

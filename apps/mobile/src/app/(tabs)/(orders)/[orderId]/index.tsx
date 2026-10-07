@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getRestaurantById } from '@/features/home/data';
 import { OrderDetailsScreen } from '@/features/orders/components/OrderDetailsScreen';
+import { isTerminal } from '@/features/orders/stages';
 import { useOrders } from '@/hooks/useOrders';
 
 export default function OrderDetails() {
@@ -21,6 +22,17 @@ export default function OrderDetails() {
       // Board 06: "Repetir abre revisão do carrinho; disponibilidade, preços e
       // endereço nunca são assumidos."
       onReorder={() => router.push('/cart')}
+      onTimeline={() =>
+        router.push({ pathname: '/(tabs)/(orders)/[orderId]/timeline', params: { orderId } })
+      }
+      // Board 14 cancels an order that is still in flight. A delivered or
+      // already-cancelled one has nothing left to cancel, so the action is
+      // absent rather than present and refusing.
+      onCancel={
+        order.stage !== null && !isTerminal(order.stage)
+          ? () => router.push({ pathname: '/(tabs)/(orders)/[orderId]/cancel', params: { orderId } })
+          : undefined
+      }
     />
   );
 }

@@ -20,6 +20,7 @@ function renderDetails(props: Partial<Parameters<typeof OrderDetailsScreen>[0]> 
           onReceipt={jest.fn()}
           onHelp={jest.fn()}
           onReorder={jest.fn()}
+          onTimeline={jest.fn()}
           {...props}
         />
       </ThemeProvider>
@@ -66,6 +67,26 @@ describe('OrderDetailsScreen', () => {
     renderDetails();
     expect(screen.getByText('Casa, Talatona, Luanda')).toBeTruthy();
     expect(screen.getByText('Ligar ao chegar. Portão cinzento.')).toBeTruthy();
+  });
+
+  /**
+   * Final review, Important 5. Board 10's progress screen and board 14's
+   * cancellation had no caller anywhere in the app, so two whole flows were
+   * unwalkable. Cancel is offered only while there is something to cancel.
+   */
+  it('reaches the progress screen and, while in flight, the cancellation', () => {
+    const onTimeline = jest.fn();
+    const onCancel = jest.fn();
+    renderDetails({ onTimeline, onCancel });
+    fireEvent.press(screen.getByRole('button', { name: 'Progresso do pedido' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Cancelar pedido' }));
+    expect(onTimeline).toHaveBeenCalledTimes(1);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers no cancellation once the order has ended', () => {
+    renderDetails({ order: mockOrders[1], onCancel: undefined });
+    expect(screen.queryByRole('button', { name: 'Cancelar pedido' })).toBeNull();
   });
 
   it('offers the three actions the board draws', () => {

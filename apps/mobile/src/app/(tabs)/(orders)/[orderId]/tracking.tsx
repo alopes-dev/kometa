@@ -30,9 +30,17 @@ export default function Tracking() {
       order={order}
       merchantName={getRestaurantById(order.merchantId)?.name ?? ''}
       onBack={() => router.back()}
-      onMessage={() => {}}
+      onMessage={() =>
+        router.push({ pathname: '/(tabs)/(orders)/[orderId]/chat', params: { orderId } })
+      }
       onCall={() =>
         order.courier ? Linking.openURL(`tel:${order.courier.phone}`).catch(() => {}) : undefined
+      }
+      onDelivered={() =>
+        router.replace({
+          pathname: '/(tabs)/(orders)/[orderId]/delivered',
+          params: { orderId },
+        })
       }
     />
   );

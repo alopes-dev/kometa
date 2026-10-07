@@ -78,23 +78,25 @@ const Actions = styled.View`
   padding-horizontal: ${({ theme }) => theme.spacing[16]}px;
 `;
 
+/**
+ * The two states carry different actions, so they are different shapes.
+ *
+ * A single `onPrimary`/`onSecondary` pair let a caller wire "Cancelar pedido"
+ * to the payment-method picker, which is exactly what happened before this
+ * was a union — the labels said one thing and the handler did another, and
+ * nothing could catch it.
+ */
 export type PaymentStateScreenProps = {
-  state: 'pending' | 'failed';
   merchantName: string;
   orderId: string;
   total: number;
-  onPrimary: () => void;
-  onSecondary: () => void;
-};
+} & (
+  | { state: 'pending'; onCompletePayment: () => void; onCancelOrder: () => void }
+  | { state: 'failed'; onRetry: () => void; onChangeMethod: () => void }
+);
 
-export function PaymentStateScreen({
-  state,
-  merchantName,
-  orderId,
-  total,
-  onPrimary,
-  onSecondary,
-}: PaymentStateScreenProps) {
+export function PaymentStateScreen(props: PaymentStateScreenProps) {
+  const { state, merchantName, orderId, total } = props;
   const insets = useSafeAreaInsets();
   const failed = state === 'failed';
 
@@ -121,10 +123,19 @@ export function PaymentStateScreen({
       </ScrollView>
 
       <Actions>
-        <Button variant="primary" size="lg" shape="pill" onPress={onPrimary}>
+        <Button
+          variant="primary"
+          size="lg"
+          shape="pill"
+          onPress={props.state === 'failed' ? props.onRetry : props.onCompletePayment}
+        >
           {failed ? content.retry : content.completePayment}
         </Button>
-        <Button variant="text" size="lg" onPress={onSecondary}>
+        <Button
+          variant="text"
+          size="lg"
+          onPress={props.state === 'failed' ? props.onChangeMethod : props.onCancelOrder}
+        >
           {failed ? content.changeMethod : content.cancelOrder}
         </Button>
       </Actions>

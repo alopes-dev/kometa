@@ -1,5 +1,5 @@
 import { content } from '../../content';
-import type { OrderRecord } from '../../store';
+import { refundState, type OrderRecord } from '../../store';
 import { ResultScreen } from '../ResultScreen';
 
 /**
@@ -16,13 +16,17 @@ export type CancelledScreenProps = {
 };
 
 export function CancelledScreen({ order, onBackToOrders, onHelp }: CancelledScreenProps) {
+  // A refund is only news when there was a charge. Saying "o estorno de X"
+  // for an order that was never paid invents a debt on the customer's behalf.
+  const refunding = refundState(order) === 'started';
+
   return (
     <ResultScreen
       tone="neutral"
       icon={{ name: 'close-circle-outline', sf: 'xmark.circle' }}
       title={content.cancelledHeadline}
-      body={content.refundBody(order.totals.total)}
-      chip={content.refundChip}
+      body={refunding ? content.refundBody(order.totals.total) : content.cancelledNoChargeBody}
+      chip={refunding ? content.refundChip : content.noChargeChip}
       primary={{ label: content.backToOrders, onPress: onBackToOrders }}
       secondary={{ label: content.needHelp, onPress: onHelp }}
     />

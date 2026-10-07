@@ -1,7 +1,7 @@
 import { Pressable } from 'react-native';
 import { formatKwanza } from '@/features/home/format';
 import { content } from '../../content';
-import type { OrderRecord } from '../../store';
+import { refundState, type OrderRecord } from '../../store';
 import { OrderStatusChip } from '../OrderStatusChip';
 import {
   BottomRow,
@@ -34,10 +34,12 @@ export type OrderHistoryRowProps = {
 
 export function OrderHistoryRow({ order, merchantName, onPress, now }: OrderHistoryRowProps) {
   const itemCount = order.lines.reduce((total, line) => total + line.quantity, 0);
-  const meta =
-    order.stage === 'cancelled'
-      ? `${content.historyMeta(order.placedAt, itemCount, now).split(' · ')[0]} · ${REFUNDED}`
-      : content.historyMeta(order.placedAt, itemCount, now);
+  // `Reembolsado` is news about money, so it is written only when money is
+  // actually coming back — previously every cancelled order claimed it.
+  // It replaces the item count, as board 05 draws it: for a refunded order
+  // where the money went matters more than how many things were in it.
+  const base = content.historyMeta(order.placedAt, itemCount, now);
+  const meta = refundState(order) === 'started' ? `${base.split(' · ')[0]} · ${REFUNDED}` : base;
 
   return (
     <Pressable

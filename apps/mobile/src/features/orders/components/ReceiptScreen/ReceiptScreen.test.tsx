@@ -42,6 +42,18 @@ describe('ReceiptScreen', () => {
     expect(screen.getByText('11.100 Kz')).toBeTruthy();
   });
 
+  /**
+   * Final review, Important 13. The receipt hardcoded "pago" and
+   * "Total cobrado", so a cancelled order's receipt claimed a charge that
+   * had been refunded or never made.
+   */
+  it('does not call a cancelled order paid', () => {
+    renderReceipt({ ...mockOrders[4], stage: 'cancelled', paymentStatus: 'cancelled' });
+    expect(screen.queryByText(/· pago/)).toBeNull();
+    expect(screen.queryByText('Total cobrado')).toBeNull();
+    expect(screen.getByText('Pedido #CM-10433 · cancelado')).toBeTruthy();
+  });
+
   it('offers the download the board draws', () => {
     renderReceipt();
     expect(screen.getByRole('button', { name: /Descarregar recibo/ })).toBeTruthy();

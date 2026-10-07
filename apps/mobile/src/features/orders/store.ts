@@ -67,6 +67,10 @@ export function historyOrders(orders: OrderRecord[]): OrderRecord[] {
  */
 export function applyStageEvent(order: OrderRecord, event: StageEvent): OrderRecord {
   if (order.stage === null) return order;
+  // An order that has ended has ended. `stageIndex('cancelled')` is -1, so
+  // without this every forward stage would pass the check below and a
+  // cancelled order could be brought back to life.
+  if (isTerminal(order.stage)) return order;
 
   const isCancellation = event.stage === 'cancelled';
   if (!isCancellation && stageIndex(event.stage) <= stageIndex(order.stage)) return order;
@@ -88,23 +92,35 @@ export async function saveOrders(orders: OrderRecord[]): Promise<void> {
 }
 
 /**
- * Nothing here throws. A storage failure degrades to "no saved orders",
- * because a restore that crashes loses a list the customer still believes in.
+ * What a read produced, and whether it can be trusted as the whole truth.
+ *
+ * `ok: false` means the read or the parse failed — NOT that the device has
+ * no orders. The difference matters: a caller that treats a failure as an
+ * empty device will happily write something else over the real history,
+ * which is the opposite of board 18's "nunca apagar contexto".
  */
-export async function loadOrders(): Promise<OrderRecord[]> {
+export type LoadResult = { ok: boolean; orders: OrderRecord[] };
+
+/** Nothing here throws; it reports instead. */
+export async function loadOrders(): Promise<LoadResult> {
   try {
     const raw = await AsyncStorage.getItem(ORDERS_KEY);
-    if (!raw) return [];
+    if (!raw) return { ok: true, orders: [] };
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isOrderRecord) : [];
+    if (!Array.isArray(parsed)) return { ok: false, orders: [] };
+    return { ok: true, orders: parsed.filter(isOrderRecord) };
   } catch {
-    return [];
+    return { ok: false, orders: [] };
   }
 }
 
 /**
- * A payload written by an older build is discarded rather than trusted. The
- * fields checked are the ones no list row can be rendered without.
+ * A payload written by an older build is discarded rather than trusted.
+ *
+ * The fields checked are the ones a row actually reads: `lines` feeds the
+ * item count, `totals` the money, `delivery` the zone. Checking only the id
+ * and the event list let a record through that crashed the first row to
+ * render it.
  */
 function isOrderRecord(value: unknown): value is OrderRecord {
   if (typeof value !== 'object' || value === null) return false;
@@ -112,6 +128,12 @@ function isOrderRecord(value: unknown): value is OrderRecord {
   return (
     typeof candidate.orderId === 'string' &&
     typeof candidate.merchantId === 'string' &&
+    typeof candidate.placedAt === 'number' &&
+    typeof candidate.totals === 'object' &&
+    candidate.totals !== null &&
+    typeof candidate.delivery === 'object' &&
+    candidate.delivery !== null &&
+    Array.isArray(candidate.lines) &&
     Array.isArray(candidate.events)
   );
 }
@@ -135,4 +157,19 @@ export const SNAPSHOT_STALE_MS = 60_000;
 export function isSnapshotStale(order: OrderRecord, now: number): boolean {
   if (order.stage === null || isTerminal(order.stage)) return false;
   return now - order.snapshotAt > SNAPSHOT_STALE_MS;
+}
+
+/**
+ * Whether money is coming back, and therefore whether to say so.
+ *
+ * The spec models cancellation as `Cancel { reason · refundState ·
+ * refundWindow }`, and board 13's refusal screen says `Sem cobrança`. An
+ * order cancelled before its payment ever settled has nothing to refund, and
+ * promising one is a debt the app invents on the customer's behalf.
+ */
+export type RefundState = 'none' | 'started';
+
+export function refundState(order: OrderRecord): RefundState {
+  if (order.stage !== 'cancelled') return 'none';
+  return order.paymentStatus === 'confirmed' ? 'started' : 'none';
 }

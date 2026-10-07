@@ -138,8 +138,10 @@ export const mockOrders: OrderRecord[] = [
   {
     orderId: 'CM-10433',
     merchantId: 'r4',
+    // Board 05 draws this row as `Reembolsado`, so the payment had settled
+    // before the order was cancelled — that is what there is to refund.
     stage: 'cancelled',
-    paymentStatus: 'cancelled',
+    paymentStatus: 'confirmed',
     placedAt: now - 18 * DAY,
     totals: { subtotal: 5_000, delivery: 1_200, deliveryMode: 'normal', discount: 0, total: 6_200 },
     lines: [{ productId: 'r4-1', name: 'Paracetamol 500mg', quantity: 2, unitPrice: 2_500 }],

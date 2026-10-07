@@ -28,6 +28,17 @@ export type StatusBannerProps = {
   body?: string;
 };
 
+/**
+ * Joins the title and the body into one spoken sentence.
+ *
+ * A bare space runs them together — "Localização desativada Podes
+ * acompanhar…" — with no pause where the heading ends. The full stop is added
+ * only when the title does not already carry its own punctuation.
+ */
+function announce(title: string, body: string): string {
+  return /[.!?:]$/.test(title) ? `${title} ${body}` : `${title}. ${body}`;
+}
+
 export function StatusBanner({ tone, title, body }: StatusBannerProps) {
   const icon = ICONS[tone];
 
@@ -35,7 +46,7 @@ export function StatusBanner({ tone, title, body }: StatusBannerProps) {
     <Container
       tone={tone}
       accessibilityRole="alert"
-      accessibilityLabel={body ? `${title} ${body}` : title}
+      accessibilityLabel={body ? announce(title, body) : title}
     >
       {/* The icon is what keeps the tone readable without colour. */}
       <View testID="status-banner-icon">

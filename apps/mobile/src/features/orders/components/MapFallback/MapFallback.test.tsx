@@ -42,4 +42,36 @@ describe('MapFallback', () => {
     expect(screen.getByText('Mapa temporariamente indisponível')).toBeTruthy();
     expect(screen.getByText('Localização desativada')).toBeTruthy();
   });
+
+  /**
+   * Final review, Important 16. The container set `accessible`, which
+   * collapses its children into one node — so a screen reader heard only the
+   * map sentence and never the denied-location one. `getByText` reads the
+   * tree regardless of grouping, which is why the test above stayed green.
+   */
+  it('announces the denied location too, not just the missing map', () => {
+    renderFallback({ locationDenied: true });
+    expect(
+      screen.getByLabelText(
+        'Localização desativada. Podes acompanhar o pedido sem partilhar a tua localização.'
+      )
+    ).toBeTruthy();
+  });
+
+  /**
+   * Board 16: the textual alternative to the map describes origin,
+   * destination, stage and ETA. A label that only says the map is missing
+   * replaces a map with nothing.
+   */
+  it('describes the journey when given one', () => {
+    renderFallback({
+      alternative:
+        'João saiu da Burger House e segue para Casa, Talatona. Chega em cerca de 12 minutos.',
+    });
+    expect(
+      screen.getByText(
+        'João saiu da Burger House e segue para Casa, Talatona. Chega em cerca de 12 minutos.'
+      )
+    ).toBeTruthy();
+  });
 });

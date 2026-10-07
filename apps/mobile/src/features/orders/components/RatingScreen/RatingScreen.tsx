@@ -115,7 +115,9 @@ export function RatingScreen({ merchantName, courierName, onBack, onSubmit }: Ra
           <Title>{content.ratingHeadline}</Title>
           <Subtitle>{content.ratingBody(merchantName, courierName)}</Subtitle>
 
-          <StarRating value={stars} onChange={setStars} />
+          {/* 36pt was under the 44pt minimum: the atom adds 4pt of hitSlop
+              each side, so 36 here makes the target exactly 44. */}
+          <StarRating value={stars} onChange={setStars} size={36} />
 
           <Tags>
             {content.ratingTags.map((tag) => {

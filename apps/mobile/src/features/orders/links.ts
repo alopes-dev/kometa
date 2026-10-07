@@ -54,3 +54,21 @@ export function parseOrderLink(url: string): OrderLink | null {
 
   return { kind, orderId };
 }
+
+/**
+ * The in-app route each published link redirects onto.
+ *
+ * `(orders)` is a route GROUP: the parentheses keep it out of the URL, so its
+ * screens live at `/[orderId]`, not `/orders/[orderId]`. The board's URLs
+ * therefore need their own route files, and these constants are what those
+ * files and this module agree on — if one moves without the other, the
+ * typecheck on the route file fails.
+ */
+export const LINK_ROUTES = {
+  order: '/(tabs)/(orders)/[orderId]',
+  tracking: '/(tabs)/(orders)/[orderId]/tracking',
+} as const;
+
+export function routeFor(link: OrderLink): (typeof LINK_ROUTES)[OrderLink['kind']] {
+  return LINK_ROUTES[link.kind];
+}

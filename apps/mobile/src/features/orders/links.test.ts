@@ -1,4 +1,4 @@
-import { orderLink, parseOrderLink, trackingLink } from './links';
+import { orderLink, parseOrderLink, routeFor, trackingLink } from './links';
 
 describe('order deep links', () => {
   /**
@@ -48,5 +48,21 @@ describe('order deep links', () => {
     const id = 'CM 10482';
     const parsed = parseOrderLink(orderLink(id));
     expect(parsed).toEqual({ kind: 'order', orderId: id });
+  });
+});
+
+describe('the links resolve to real routes', () => {
+  /**
+   * Final review, Important 7. `(orders)` is a route GROUP, so its screens
+   * live at `/[orderId]`, not `/orders/[orderId]` — the board's URLs matched
+   * nothing, and every test here passed because they only round-tripped
+   * their own strings. These two files are what give the published URLs a
+   * target.
+   */
+  it('names the in-app route each published link redirects onto', () => {
+    expect(routeFor({ kind: 'order', orderId: 'CM-10482' })).toBe('/(tabs)/(orders)/[orderId]');
+    expect(routeFor({ kind: 'tracking', orderId: 'CM-10482' })).toBe(
+      '/(tabs)/(orders)/[orderId]/tracking'
+    );
   });
 });

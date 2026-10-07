@@ -63,6 +63,20 @@ describe('CourierCard', () => {
       expect(screen.getByText(/4,9/)).toBeTruthy();
     });
 
+    /**
+     * Final review, Important 17. Board 16 transcribes this label verbatim.
+     * Without it VoiceOver reads the literal star glyph and spells the plate
+     * out character by character.
+     */
+    it('reads as the sentence board 16 writes', () => {
+      renderCard('identity');
+      expect(
+        screen.getByLabelText(
+          'João Manuel, avaliação 4 vírgula 9, Toyota Yaris, matrícula ABC-12-34.'
+        )
+      ).toBeTruthy();
+    });
+
     it('offers both ways to reach them', () => {
       const onMessage = jest.fn();
       const onCall = jest.fn();

@@ -51,6 +51,7 @@ export const content = {
   exploreRestaurants: 'Explorar restaurantes',
   confirmCancel: 'Confirmar cancelamento',
   keepOrder: 'Manter pedido',
+  cancelOrder: 'Cancelar pedido',
   backToOrders: 'Voltar aos pedidos',
   needHelp: 'Preciso de ajuda',
   rate: 'Avaliar pedido',
@@ -123,6 +124,8 @@ export const content = {
   /** `O estorno de 12.400 Kz pode demorar 3–5 dias úteis, conforme o banco.` */
   refundBody: (total: number) =>
     `O estorno de ${formatKwanza(total)} pode demorar 3–5 dias úteis, conforme o banco.`,
+  /** When the order was cancelled before its payment ever settled. */
+  cancelledNoChargeBody: 'Não houve cobrança. Nada será debitado do teu método de pagamento.',
 
   // ─── Rejection (board 13) ────────────────────────────────────────────────
   rejectedHeadline: (merchant: string) => `A ${merchant} não conseguiu aceitar o pedido`,
@@ -152,6 +155,8 @@ export const content = {
   etaLine: (band: EtaBand) => {
     if (band.kind === 'none') return '';
     if (band.kind === 'time') return `Entregue às ${formatEta(band)}`;
+    // "Chega em Agora" is not a sentence: arrival is stated, not prefixed.
+    if (band.kind === 'now') return 'O courier chegou';
     return `Chega em ${formatEta(band)}`;
   },
 
@@ -173,6 +178,18 @@ export const content = {
         return '';
     }
   },
+
+  /**
+   * Board 16's semantic label for the courier card, verbatim:
+   * «João Manuel, avaliação 4 vírgula 9, Toyota Yaris, matrícula ABC-12-34.»
+   *
+   * The rating is spelled with the Portuguese decimal comma read aloud, and
+   * the plate is labelled — otherwise a screen reader announces a star glyph
+   * and then spells `ABC-12-34` character by character with no context.
+   */
+  courierLabel: (courier: { name: string; rating: number; vehicle: string; plate: string }) =>
+    `${courier.name}, avaliação ${String(courier.rating).replace('.', ' vírgula ')}, ` +
+    `${courier.vehicle}, matrícula ${courier.plate}.`,
 
   /**
    * Board 16's semantic label for the Active Order Card, read as one
